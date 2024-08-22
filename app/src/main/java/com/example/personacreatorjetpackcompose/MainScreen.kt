@@ -22,6 +22,8 @@ import androidx.navigation.NavHostController
 @Composable
 fun MainScreen(navController: NavHostController) {
     val textState = remember { mutableStateOf("") }
+
+    //-------------------------------------------------------------メイン画面start
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -44,4 +46,5 @@ fun MainScreen(navController: NavHostController) {
         )
         Text("You entered: ${textState.value}")
     }
+    //----------------------------------------------------------メイン画面end
 }
