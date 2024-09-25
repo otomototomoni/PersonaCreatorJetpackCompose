@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "563196156777",
+    "project_id": "personacreator-50636",
+    "storage_bucket": "personacreator-50636.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:563196156777:android:d437ad08abe5d896e37bf8",
+        "android_client_info": {
+          "package_name": "com.example.personacreatorjetpackcompose"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD3YbuuUADIN9DiE41sjMkJbbbmdO5S78I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

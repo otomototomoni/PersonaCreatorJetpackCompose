@@ -13,6 +13,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import java.security.AlgorithmParameters
 
 //----------------------------------------------メイン画面
 @Composable
@@ -24,7 +25,13 @@ fun MainScreen(navController: NavHostController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text("New Persona")
-        Row{
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ){
+
             Button(onClick = {
                 navController.navigate("personaEdit")
             }) {
