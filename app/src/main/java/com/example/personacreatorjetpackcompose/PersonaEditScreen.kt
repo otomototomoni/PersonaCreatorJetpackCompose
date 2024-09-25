@@ -8,8 +8,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 
 //-----------------------------------ペルソナ作成画面
 @Composable
@@ -25,4 +27,12 @@ fun PersonaEditScreen(navController: NavHostController){
             Text(text = "保存")
         }
     }
+}
+
+//--------------------------------------preview
+@Preview(showBackground = true)
+@Composable
+fun PersonaEditScreenPreview() {
+    val navController = rememberNavController()
+    PersonaEditScreen(navController = navController)
 }

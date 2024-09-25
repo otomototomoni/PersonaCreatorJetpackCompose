@@ -32,13 +32,3 @@ fun CustomMainActivity(){
         composable("personaEdit") { PersonaEditScreen(navController) }
     }
 }
-
-
-//----------------------------------preview
-
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    val navController = rememberNavController()
-    MainScreen(navController = navController)
-}
