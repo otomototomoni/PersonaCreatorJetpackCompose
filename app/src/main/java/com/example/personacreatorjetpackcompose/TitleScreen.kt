@@ -21,7 +21,7 @@ fun TitleScreen(navController: NavHostController) {
 
     LaunchedEffect(key1 = Unit) {
         delay(3000) // 3秒待つ
-        navController.navigate("main") // MainScreenへ遷移
+        navController.navigate("login") // LoginScreenへ遷移
     }
 
     Column(
