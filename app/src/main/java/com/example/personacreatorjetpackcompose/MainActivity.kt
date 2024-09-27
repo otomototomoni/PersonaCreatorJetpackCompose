@@ -31,8 +31,8 @@ class MainActivity : ComponentActivity() {
 fun CustomMainActivity(){
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "title") {
-        composable("title"){ Title(navController) }
-        composable("login"){ LoginScreen(navController) }
+        composable("title"){ TitleScreen(navController) }
+        composable("signup"){ SignUpScreen(navController) }
         composable("main") { MainScreen(navController) }
         composable("personaEdit") { PersonaEditScreen(navController) }
     }

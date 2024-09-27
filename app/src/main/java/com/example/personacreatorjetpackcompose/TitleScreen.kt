@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,7 +17,7 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 
 @Composable
-fun Title(navController: NavHostController) {
+fun TitleScreen(navController: NavHostController) {
 
     LaunchedEffect(key1 = Unit) {
         delay(3000) // 3秒待つ
@@ -43,5 +42,5 @@ fun Title(navController: NavHostController) {
 @Composable
 fun TitlePreview() {
     val navController = rememberNavController()
-    Title(navController = navController)
+    TitleScreen(navController = navController)
 }

@@ -1,8 +1,6 @@
 package com.example.personacreatorjetpackcompose
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,7 +20,7 @@ import androidx.navigation.compose.rememberNavController
 
 //画面
 @Composable
-fun LoginScreen(navController: NavHostController){
+fun SignUpScreen(navController: NavHostController){
 
     val email = remember{ mutableStateOf("") }
     val password = remember{ mutableStateOf("") }
@@ -70,5 +68,5 @@ fun LoginScreen(navController: NavHostController){
 @Composable
 fun LoginScreenPreview(){
     val navController = rememberNavController()
-    LoginScreen(navController = navController)
+    SignUpScreen(navController = navController)
 }
