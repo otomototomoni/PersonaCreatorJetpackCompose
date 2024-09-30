@@ -53,7 +53,12 @@ android {
 
 dependencies {
 
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
     implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
+    // Add the dependency for the Firebase Authentication library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-analytics")
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -68,6 +73,9 @@ dependencies {
     implementation(libs.androidx.foundation.layout.android)
     implementation(libs.androidx.foundation.layout.android)
     implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.firebase.auth.ktx)
+    //implementation(libs.androidx.lifecycle.viewmodel.compose)//viewModel調べて入れたやつ
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")//Geminiに教えてもらったviewModel
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
