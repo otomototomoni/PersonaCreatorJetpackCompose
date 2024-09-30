@@ -38,15 +38,14 @@ class FirebaseAuthViewModel: ViewModel(){
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        //super.onCreate(savedInstanceState)//必要かどうかを検討
+        super.onCreate(savedInstanceState)//必要かどうかを検討
 
         FirebaseApp.initializeApp(this)//firebase初期化
 
-        val viewModel = viewModel< FirebaseAuthViewModel >()//firebaseのログイン機能に必要な情報をviewModelで取得
         enableEdgeToEdge()
         setContent {
             PersonaCreatorJetpackComposeTheme {
-                    CustomMainActivity(viewModel)
+                    CustomMainActivity()
             }
         }
     }
@@ -54,12 +53,15 @@ class MainActivity : ComponentActivity() {
 
 //-----------------------------------画面切り替えに必要なやつ
 @Composable
-fun CustomMainActivity(auth:FirebaseAuth){//authはFirebaseの認証機能
-    val navController = rememberNavController()
+fun CustomMainActivity(){//authはFirebaseの認証機能
+
+    val navController = rememberNavController()//画面遷移の管理
+    val viewModel = viewModel< FirebaseAuthViewModel >()//firebaseのログイン機能に必要な情報をviewModelで取得
+
     NavHost(navController = navController, startDestination = "title") {
         composable("title"){ TitleScreen(navController) }
         composable("login"){ LoginScreen(navController) }
-        composable("signup"){ SignUpScreen(navController,auth) }
+        composable("signup"){ SignUpScreen(navController,viewModel) }
         composable("main") { MainScreen(navController) }
         composable("personaEdit") { PersonaEditScreen(navController) }
     }
