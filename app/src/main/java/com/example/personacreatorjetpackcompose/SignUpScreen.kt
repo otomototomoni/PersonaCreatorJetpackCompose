@@ -1,5 +1,9 @@
 package com.example.personacreatorjetpackcompose
 
+import android.content.ContentValues.TAG
+import android.content.Context
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -13,6 +17,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -20,6 +25,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 /*
@@ -35,9 +41,12 @@ import com.google.firebase.ktx.Firebase
 @Composable
 fun SignUpScreen(navController: NavHostController,viewModel:FirebaseAuthViewModel){
 
+    val context = LocalContext.current//エラーをToastで出力するために必要なcontext
     val email = remember{ mutableStateOf("") }//登録するメールアドレス
     val password = remember{ mutableStateOf("") }//そのアドレスに対するパスワード
+    val db = Firebase.firestore//firestoreのインスタンスを生成
 
+    //画面--------------------------------------------------------
     Column(
         //画面の大きさや位置を指定する
         modifier = Modifier
@@ -75,23 +84,49 @@ fun SignUpScreen(navController: NavHostController,viewModel:FirebaseAuthViewMode
             　ログイン機能
             　パスワードが弱すぎる、メールアドレスが無効、すでに同じメールアドレスが登録されている。
             　↑これらでエラーが起こる。
+              Firebase Authentication を使用して新しいユーザーアカウントを作成する処理。
             */
             viewModel.auth
-                .createUserWithEmailAndPassword(email.value, password.value)//新規登録処理を実行
-                .addOnCompleteListener { task ->//処理の完了を監視し、成功または失敗に応じて処理を行う
+                .createUserWithEmailAndPassword(email.value, password.value)//新しいユーザーアカウントを作成。emailとpasswordを参照している
+                .addOnCompleteListener { task ->//アカウント作成処理が完了したときに実行されるリスナーをお登録する。taskオブジェクトには、処理が成功したかどうか、エラーが発生したかどうかなどの情報が含まれている。
 
-                    //登録成功
+                    //Firebase Authentication 登録成功
                     if (task.isSuccessful) {
                         val user = viewModel.auth.currentUser//auth.currentUserで登録されたユーザー情報を取得できる
                         //追加事項：ユーザー情報を保存する処理（データベース）
-                        //追加事項：ユーザーに確認メールを送信する。
-                        navController.navigate("login")//ログイン画面に戻る
-                    //登録失敗
+
+                        //forebaseのユーザー情報をハッシュマップで保存
+                        val userData = hashMapOf(
+                            "email" to email.value,
+                            "password" to password.value
+                        )
+                        //データベースのコレクションの作成とデータの保存
+                        db.collection("users").document(user!!.uid)
+                            .set(userData)
+                            //firestoreへのデータ書き込みが成功した場合に実行される
+                            .addOnSuccessListener {
+                                Log.d(TAG,"DocumentSnapshot successfully written!")
+                                //追加事項：ユーザーに確認メールを送信する。
+                                navController.navigate("login")//ログイン画面に戻る
+                            }
+                            //firestoreへのデータ書き込みが失敗した場合に実行される
+                            .addOnFailureListener {e ->//eをリスナーの引数として宣言すると、リスナー内でeを参照できる。
+                                Log.w(TAG,"Error writing document",e)
+                            }
+
+                    //Firebase Authentication 登録失敗
                     } else {
+                        //本番では使わない
                         val exception = task.exception//task.exceptionでエラーの情報を取得できる
                         //ログ出力ライブラリかカスタム例外ハンドラを使用する↓
-                        exception?.printStackTrace()//printStackTraceはデバッグ用で本番環境では使わない方がいい
-                    }
+                        exception?.printStackTrace()//printStackTraceはデバッグ用で本番環境では使わない
+
+                        //エラーメッセージを表示する
+                        //第一引数のcontextは上で定義したもの
+                        Toast.makeText(context, "サインアップに失敗しました", Toast.LENGTH_SHORT).show()
+                        Log.e(TAG,"サインアップエラー",exception)//ログに記録
+
+                    }//if分ここまで
 
                 }
         },//onClick
