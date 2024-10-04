@@ -14,6 +14,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 
+/*
+    ログイン画面
+    メールアドレスとパスワードを打ってログインする。
+ */
+
 @Composable
 fun LoginScreen(navController: NavHostController){
 
