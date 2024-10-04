@@ -36,7 +36,9 @@ import com.google.firebase.ktx.Firebase
   ※ViewModelクラスにはauthというプロパティが定義されていないため。
 
   メモ：
-  後は、データベースにメールアドレスとパスワードを保存してログインができるようにする。
+  登録メールアドレスにメールを送る
+  許可をしてからサインインができるようにする。
+  戻るボタンを作成
  */
 @Composable
 fun SignUpScreen(navController: NavHostController,viewModel:FirebaseAuthViewModel){
@@ -81,7 +83,7 @@ fun SignUpScreen(navController: NavHostController,viewModel:FirebaseAuthViewMode
         //新規登録ボタン
         Button(onClick = {
             /*
-            　ログイン機能
+            　新規登録機能
             　パスワードが弱すぎる、メールアドレスが無効、すでに同じメールアドレスが登録されている。
             　↑これらでエラーが起こる。
               Firebase Authentication を使用して新しいユーザーアカウントを作成する処理。
@@ -137,6 +139,17 @@ fun SignUpScreen(navController: NavHostController,viewModel:FirebaseAuthViewMode
         ){
             Text(text = "新規登録")
         }//button text
+
+        //ログイン画面へ戻るボタン
+        Button(onClick = {
+            navController.navigate("login")
+        },
+            modifier = Modifier
+                .padding(top = 10.dp)
+                .width(200.dp)
+        ){
+            Text(text = "ログイン画面に戻る")
+        }
     }//column
 }//fun
 

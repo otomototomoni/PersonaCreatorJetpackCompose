@@ -1,11 +1,13 @@
 package com.example.personacreatorjetpackcompose
 
+import android.content.Context
 import android.icu.text.CaseMap
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -18,6 +20,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
+//---------------------------------------------------------------
 /*ViewModelの初期化
 　Firebase.authというログインやサインイン、ログアウトで使用する変数を定義。
 　再生性などをしなくなるため、最近ではこのやり方がメイン
@@ -31,6 +34,7 @@ class FirebaseAuthViewModel: ViewModel(){
     }
 }
 
+//--------------------------------------------------------------------------
 /*
 　最初のonCreate関数
 　Firebaseの初期化などを行っている。
@@ -51,7 +55,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-//-----------------------------------画面切り替えに必要なやつ
+//------------------------------------------------------画面切り替えに必要なやつ
 @Composable
 fun CustomMainActivity(){//authはFirebaseの認証機能
 
@@ -60,7 +64,7 @@ fun CustomMainActivity(){//authはFirebaseの認証機能
 
     NavHost(navController = navController, startDestination = "title") {
         composable("title"){ TitleScreen(navController) }
-        composable("login"){ LoginScreen(navController) }
+        composable("login"){ LoginScreen(navController,viewModel) }
         composable("signup"){ SignUpScreen(navController,viewModel) }
         composable("main") { MainScreen(navController) }
         composable("personaEdit") { PersonaEditScreen(navController) }
