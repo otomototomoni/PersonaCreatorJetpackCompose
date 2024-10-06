@@ -22,7 +22,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import java.security.AlgorithmParameters
-
+/*
+    新規ペルソナ作成で、保存を押すとペルソナが増えていくようにする。
+    それぞれのペルソナを押すとそのペルソナの編集画面に移動する。
+ */
 //----------------------------------------------メイン画面
 @Composable
 fun MainScreen(navController: NavHostController) {
@@ -101,6 +104,7 @@ fun MainScreen(navController: NavHostController) {
     }
 }
 
+//------------------------------------------preview
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {

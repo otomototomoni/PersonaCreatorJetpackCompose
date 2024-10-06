@@ -83,6 +83,8 @@ dependencies {
     //implementation(libs.androidx.lifecycle.viewmodel.compose)//viewModel調べて入れたやつ
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.2")//Geminiに教えてもらったviewModel
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.androidx.espresso.core)
+    implementation(libs.androidx.constraintlayout.compose)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

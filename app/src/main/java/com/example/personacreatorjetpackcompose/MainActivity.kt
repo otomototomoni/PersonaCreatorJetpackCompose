@@ -25,10 +25,9 @@ import com.google.firebase.ktx.Firebase
 　Firebase.authというログインやサインイン、ログアウトで使用する変数を定義。
 　再生性などをしなくなるため、最近ではこのやり方がメイン
  */
-class FirebaseAuthViewModel: ViewModel(){
+class MainViewModel: ViewModel(){
     //Authentication
     lateinit var auth: FirebaseAuth//Lateinitで「後で初期化をする」という宣言ができる
-
     init{
         auth = Firebase.auth//Lateinitを使用したら必ず初期化しないといけない
     }
@@ -60,7 +59,7 @@ class MainActivity : ComponentActivity() {
 fun CustomMainActivity(){//authはFirebaseの認証機能
 
     val navController = rememberNavController()//画面遷移の管理
-    val viewModel = viewModel< FirebaseAuthViewModel >()//firebaseのログイン機能に必要な情報をviewModelで取得
+    val viewModel = viewModel< MainViewModel >()//firebaseのログイン機能に必要な情報をviewModelで取得
 
     NavHost(navController = navController, startDestination = "title") {
         composable("title"){ TitleScreen(navController) }

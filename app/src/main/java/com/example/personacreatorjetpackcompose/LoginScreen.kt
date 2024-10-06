@@ -5,18 +5,26 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontVariation.width
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.Visibility
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 
@@ -26,6 +34,7 @@ import androidx.navigation.compose.rememberNavController
     データベースに登録されているメールアドレスとパスワードと照合する。
 
     メモ：
+    パスワードを入力しているときに見えなくする
     サインインしている場合にログイン画面を飛ばす機能
     セキュリティの強化。実際に何をすればいいかは謎
  */
@@ -35,6 +44,7 @@ fun LoginScreen(navController: NavHostController,viewModel:FirebaseAuthViewModel
 
     val email = remember{mutableStateOf("")}//入力されたメールアドレス
     val password = remember{mutableStateOf("")}//入力されたパスワード
+    var passwordVisible by remember{mutableStateOf(false)}
     val context = LocalContext.current//Taastでエラーの出力、成功の出力に必要なcontext
 
     Column (
