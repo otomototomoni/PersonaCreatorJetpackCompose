@@ -40,7 +40,7 @@ import androidx.navigation.compose.rememberNavController
  */
 
 @Composable
-fun LoginScreen(navController: NavHostController,viewModel:FirebaseAuthViewModel){
+fun LoginScreen(navController: NavHostController,viewModel:MainViewModel){
 
     val email = remember{mutableStateOf("")}//入力されたメールアドレス
     val password = remember{mutableStateOf("")}//入力されたパスワード
@@ -116,5 +116,5 @@ fun LoginScreen(navController: NavHostController,viewModel:FirebaseAuthViewModel
 @Composable
 fun LoginScreenPreview(){
     val navController = rememberNavController()
-    LoginScreen(navController = navController,viewModel = FirebaseAuthViewModel())
+    LoginScreen(navController = navController,viewModel = MainViewModel())
 }

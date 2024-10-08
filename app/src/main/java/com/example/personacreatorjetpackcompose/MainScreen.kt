@@ -1,6 +1,7 @@
 package com.example.personacreatorjetpackcompose
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,7 +9,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -25,83 +32,47 @@ import java.security.AlgorithmParameters
 /*
     新規ペルソナ作成で、保存を押すとペルソナが増えていくようにする。
     それぞれのペルソナを押すとそのペルソナの編集画面に移動する。
+    MainScreenでは固定された外枠のデザイン部分を記述している。
+    scroll部分はMainScrollScreenで記述している。
+
+    メモ：
+    スクロール部分がスクロールできない。多分他のviewの記述が必要
+    scroll○○○○()のようなメソッドで管理していた。
  */
 //----------------------------------------------メイン画面
 @Composable
 fun MainScreen(navController: NavHostController) {
 
-    val num1 = remember{ mutableStateOf("") }
-    val num2 = remember{ mutableStateOf("") }
-    val sum = remember{ mutableStateOf(0) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+    //外側のデザイン
+    Box(
+        modifier = Modifier.fillMaxSize()
     ) {
-        Text("New Persona")
-        Column(
+
+        //scrollできる内容
+        MainScrollScreen(navController = navController)
+
+        // 右下に固定されたFAB
+        FloatingActionButton(
+            onClick = { /* FABクリック処理 */ },
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ){
-            //ペルソナ作成ボタン
-            Button(
-                onClick = { navController.navigate("personaEdit") }
-            ) {
-                Text(
-                    text = "新しいペルソナ作成"
-                )
-            }
+                .align(Alignment.BottomEnd) // 右下に固定
+                .padding(16.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "追加")
+        }
 
-            //数字の入力
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ){
-                OutlinedTextField(
-                value = num1.value,
-                onValueChange = {num1.value = it},
-                label = { Text("1つ目の数字") },
-                    modifier = Modifier
-                        .width(100.dp)
-                        .weight(1f)
-                )
-                //間隔
-                Spacer(
-                    modifier = Modifier
-                        .width(8.dp)
-                )
-                OutlinedTextField(
-                    value = num2.value,
-                    onValueChange = {num2.value = it},
-                    label = { Text("2つ目の数字") },
-                    modifier = Modifier
-                        .width(100.dp)
-                        .weight(1f)
-                )
-
-            }//Row
-
-            Button(
-                onClick = { sum.value = (num1.value.toIntOrNull()?:0) + (num2.value.toIntOrNull()?:0) },
-                modifier = Modifier.padding(top = 8.dp)
-            ) {
-                Text(
-                    text = "足し算",
-                )
-            }
-            Text(
-                "計算結果 --> ${sum.value} ",
-                modifier = Modifier.padding(top = 6.dp)
-            )
+        // 左上に固定されたハンバーガーメニュー
+        IconButton(
+            onClick = { /* ハンバーガーメニュークリック処理 */ },
+            modifier = Modifier
+                .align(Alignment.TopStart) // 左上に固定
+                .padding(16.dp)
+        ) {
+            Icon(Icons.Default.Menu, contentDescription = "ハンバーガーメニュー")
         }
     }
+
+
 }
 
 //------------------------------------------preview
