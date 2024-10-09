@@ -1,6 +1,8 @@
 package com.example.personacreatorjetpackcompose
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,108 +20,50 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.constraintlayout.compose.Dimension
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.Color
+
+/*
+    MainScreenのscroll部分
+    ここに追加されたペルソナを標示していく
+ */
 
 @Composable
 fun MainScrollScreen(navController: NavHostController){
 
-    val num1 = remember{ mutableStateOf("") }
-    val num2 = remember{ mutableStateOf("") }
-    val sum = remember{ mutableStateOf(0) }
+    val scrollState = rememberScrollState()//スクロール状態の管理をするためのもの
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            //boxの範囲を決めている
+            .padding(
+                start = (0.1f * LocalConfiguration.current.screenWidthDp).dp, // 左側10%のパディング
+                top = (0.2f * LocalConfiguration.current.screenHeightDp).dp, // 上側20%のパディング
+                end = (0.1f * LocalConfiguration.current.screenWidthDp).dp, // 右側10%のパディング
+                bottom = (0.2f * LocalConfiguration.current.screenHeightDp).dp // 下側20%のパディング
+            )
+            //boxの外枠に線を標示
+            .border(
+                width = 1.dp,
+                color = Color.Black,
+                shape = RoundedCornerShape(8.dp)
+            )
+
+            .verticalScroll(scrollState)//垂直スクロールを有効にしている
+
     ) {
-        Text("New Persona")
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            //ペルソナ作成ボタン
-            Button(
-                onClick = { navController.navigate("personaEdit") }
-            ) {
-                Text(
-                    text = "新しいペルソナ作成"
-                )
-            }
-
-            //数字の入力
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = num1.value,
-                    onValueChange = { num1.value = it },
-                    label = { Text("1つ目の数字") },
-                    modifier = Modifier
-                        .width(100.dp)
-                        .weight(1f)
-                )
-                //間隔
-                Spacer(
-                    modifier = Modifier
-                        .width(8.dp)
-                )
-                OutlinedTextField(
-                    value = num2.value,
-                    onValueChange = { num2.value = it },
-                    label = { Text("2つ目の数字") },
-                    modifier = Modifier
-                        .width(100.dp)
-                        .weight(1f)
-                )
-
-            }//Row
-
-            Button(
-                onClick = {
-                    sum.value =
-                        (num1.value.toIntOrNull() ?: 0) + (num2.value.toIntOrNull() ?: 0)
-                },
-                modifier = Modifier.padding(top = 8.dp)
-            ) {
-                Text(
-                    text = "足し算",
-                )
-            }
-            Text(
-                "計算結果 --> ${sum.value} ",
-                modifier = Modifier.padding(top = 6.dp)
-            )
-
-            Text("scroll")
-            Text("scroll",
-                modifier = Modifier
-                    .padding(top = 100.dp)
-            )
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-            Text("scroll")
-        }
-    }
-}
+        Column{
+            repeat(100){
+                Text("item $it")
+            }//repeat-end
+        }//column-end
+    }//boc-end
+}//function-end

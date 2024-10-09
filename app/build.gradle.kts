@@ -66,6 +66,9 @@ dependencies {
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-firestore")
 
+    implementation("androidx.compose.ui:ui:1.3.0") // Jetpack Compose UI ライブラリ
+    implementation("androidx.compose.foundation:foundation:1.3.0") // Foundation ライブラリ (LazyColumn などを含む)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
