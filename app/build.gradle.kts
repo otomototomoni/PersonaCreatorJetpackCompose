@@ -88,6 +88,8 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.androidx.espresso.core)
     implementation(libs.androidx.constraintlayout.compose)
+    implementation(libs.androidx.foundation.layout.android)
+    implementation(libs.firebase.database.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -95,4 +97,9 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    //semantictのtagでエラーが発生するため
+    implementation("androidx.compose.ui:ui-graphics:1.3.0")
+    implementation("androidx.compose.ui:ui-tooling-preview:1.3.0")
+    implementation("androidx.compose.material3:material3:1.0.0")
 }

@@ -41,7 +41,8 @@ import java.security.AlgorithmParameters
  */
 //----------------------------------------------メイン画面
 @Composable
-fun MainScreen(navController: NavHostController) {
+fun MainScreen(navController: NavHostController,viewModel:MainViewModel) {
+    var personaName = ""
 
     //外側のデザイン
     Box(
@@ -49,26 +50,16 @@ fun MainScreen(navController: NavHostController) {
     ) {
 
         //scrollできる内容
-        MainScrollScreen(navController = navController)
+        MainScrollScreen(navController = navController,viewModel,personaName)
 
-        // 右下に固定されたFAB
-        FloatingActionButton(
-            onClick = { /* FABクリック処理 */ },
+        // 上部真ん中に固定されたbutton
+        Button(
+            onClick = { navController.navigate("personaaddition") },
             modifier = Modifier
-                .align(Alignment.BottomEnd) // 右下に固定
-                .padding(16.dp)
+                .align(Alignment.TopCenter) // 上部センターに固定
+                .padding(top = 30.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = "追加")
-        }
-
-        // 左上に固定されたハンバーガーメニュー
-        IconButton(
-            onClick = { /* ハンバーガーメニュークリック処理 */ },
-            modifier = Modifier
-                .align(Alignment.TopStart) // 左上に固定
-                .padding(16.dp)
-        ) {
-            Icon(Icons.Default.Menu, contentDescription = "ハンバーガーメニュー")
+            Text("ペルソナ新規作成")
         }
     }
 
@@ -80,5 +71,5 @@ fun MainScreen(navController: NavHostController) {
 @Composable
 fun MainScreenPreview() {
     val navController = rememberNavController()
-    MainScreen(navController = navController)
+    MainScreen(navController = navController,viewModel = MainViewModel())
 }

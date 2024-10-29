@@ -46,7 +46,6 @@ fun SignUpScreen(navController: NavHostController,viewModel:MainViewModel){
     val context = LocalContext.current//エラー、成功をToastで出力するために必要なcontext
     val email = remember{ mutableStateOf("") }//登録するメールアドレス
     val password = remember{ mutableStateOf("") }//そのアドレスに対するパスワード
-    val db = Firebase.firestore//firestoreのインスタンスを生成
 
     //画面--------------------------------------------------------
     Column(
@@ -103,8 +102,7 @@ fun SignUpScreen(navController: NavHostController,viewModel:MainViewModel){
 
                         //Firebase Authentication 登録成功
                         if (task.isSuccessful) {
-                            val user =
-                                viewModel.auth.currentUser//auth.currentUserで登録されたユーザー情報を取得できる
+                            val user = viewModel.auth.currentUser//auth.currentUserで登録されたユーザー情報を取得できる
                             //追加事項：ユーザー情報を保存する処理（データベース）
 
                             //forebaseのユーザー情報をハッシュマップで保存
@@ -113,7 +111,7 @@ fun SignUpScreen(navController: NavHostController,viewModel:MainViewModel){
                                 "password" to password.value
                             )
                             //データベースのコレクションの作成とデータの保存
-                            db.collection("users").document(user!!.uid)
+                                viewModel.db.collection("users").document(user!!.uid)
                                 .set(userData)
                                 //firestoreへのデータ書き込みが成功した場合に実行される
                                 .addOnSuccessListener {

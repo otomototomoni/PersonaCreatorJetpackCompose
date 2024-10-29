@@ -18,6 +18,8 @@ import com.example.personacreatorjetpackcompose.ui.theme.PersonaCreatorJetpackCo
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 //---------------------------------------------------------------
@@ -28,8 +30,10 @@ import com.google.firebase.ktx.Firebase
 class MainViewModel: ViewModel(){
     //Authentication
     lateinit var auth: FirebaseAuth//Lateinitで「後で初期化をする」という宣言ができる
+    lateinit var db: FirebaseFirestore//firestoreのインスタンスを生成
     init{
         auth = Firebase.auth//Lateinitを使用したら必ず初期化しないといけない
+        db = Firebase.firestore
     }
 }
 
@@ -65,7 +69,8 @@ fun CustomMainActivity(){//authはFirebaseの認証機能
         composable("title"){ TitleScreen(navController) }
         composable("login"){ LoginScreen(navController,viewModel) }
         composable("signup"){ SignUpScreen(navController,viewModel) }
-        composable("main") { MainScreen(navController) }
-        composable("personaEdit") { PersonaEditScreen(navController) }
+        composable("main") { MainScreen(navController,viewModel) }
+        composable("personaaddition") { PersonaAdditionScreen(navController,viewModel) }
+        composable("personaedit") { PersonaEditScreen(navController,viewModel) }
     }
 }
