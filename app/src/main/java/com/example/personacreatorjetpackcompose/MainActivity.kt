@@ -2,6 +2,11 @@ package com.example.personacreatorjetpackcompose
 
 import android.content.Context
 import android.icu.text.CaseMap
+
+//navArgumentのimport
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -65,12 +70,21 @@ fun CustomMainActivity(){//authはFirebaseの認証機能
     val navController = rememberNavController()//画面遷移の管理
     val viewModel = viewModel< MainViewModel >()//firebaseのログイン機能に必要な情報をviewModelで取得
 
+    //画面遷移一覧
     NavHost(navController = navController, startDestination = "title") {
         composable("title"){ TitleScreen(navController) }
         composable("login"){ LoginScreen(navController,viewModel) }
         composable("signup"){ SignUpScreen(navController,viewModel) }
         composable("main") { MainScreen(navController,viewModel) }
         composable("personaaddition") { PersonaAdditionScreen(navController,viewModel) }
-        composable("personaedit") { PersonaEditScreen(navController,viewModel) }
+
+        //ペルソナを編集する画面に移動するのに、ペルソナの名前で判断している。
+        composable("personaedit/{personaName}",
+        arguments = listOf(navArgument("personaName") {
+            type = NavType.StringType
+        })){backStackEntry ->
+            val personaName = backStackEntry.arguments?.getString("personaName").toString()
+            PersonaEditScreen(navController,viewModel,personaName)
+        }
     }
 }

@@ -89,7 +89,7 @@ fun MainScrollScreen(navController: NavHostController,viewModel:MainViewModel,ov
                         .fillMaxWidth()
                         .padding(bottom = 10.dp),
                     onClick = {
-                        navController.navigate("personaedit")//引数の渡し方がおかしい
+                        navController.navigate("personaedit/${persona}")//引数の渡し方がおかしい
                     }
                 ){
                     Text(text = persona)

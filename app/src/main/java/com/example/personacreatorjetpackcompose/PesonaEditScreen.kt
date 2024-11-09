@@ -2,20 +2,21 @@ package com.example.personacreatorjetpackcompose
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import java.lang.reflect.Modifier
+
+/*
+    それぞれのペルソナの編集画面
+ */
 
 @Composable
-fun PersonaEditScreen(navController: NavHostController,viewModel:MainViewModel){
-    Text(text = "PersonaEditScreen")
+fun PersonaEditScreen(navController: NavHostController,viewModel:MainViewModel,personaName:String){
 
     Column(
         modifier = Modifier
@@ -23,7 +24,7 @@ fun PersonaEditScreen(navController: NavHostController,viewModel:MainViewModel){
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ){
-        Text(text = "")
+        Text(text = personaName)
 
         Button(
             onClick = { navController.navigate("main") }

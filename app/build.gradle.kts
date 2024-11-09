@@ -53,6 +53,8 @@ android {
 
 dependencies {
 
+    //navArgumentについての依存関係
+    implementation("androidx.navigation:navigation-compose:2.5.3")
     // Import the BoM for the Firebase platform
     implementation(platform("com.google.firebase:firebase-bom:32.3.1"))
     implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
@@ -90,6 +92,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.foundation.layout.android)
     implementation(libs.firebase.database.ktx)
+    implementation(libs.androidx.foundation.layout.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
