@@ -42,7 +42,6 @@ import java.security.AlgorithmParameters
 //----------------------------------------------メイン画面
 @Composable
 fun MainScreen(navController: NavHostController,viewModel:MainViewModel) {
-    var personaName = ""
 
     //外側のデザイン
     Box(
@@ -50,7 +49,7 @@ fun MainScreen(navController: NavHostController,viewModel:MainViewModel) {
     ) {
 
         //scrollできる内容
-        MainScrollScreen(navController = navController,viewModel,personaName)
+        MainScrollScreen(navController = navController,viewModel)
 
         // 上部真ん中に固定されたbutton
         Button(

@@ -46,7 +46,7 @@ import com.google.firebase.database.core.Tag
 data class ButtonData(val text: String, val documentId: String)//Gemini
 
 @Composable
-fun MainScrollScreen(navController: NavHostController,viewModel:MainViewModel,overpersonaName:String){
+fun MainScrollScreen(navController: NavHostController,viewModel:MainViewModel){
 
     val scrollState = rememberScrollState()//スクロール状態の管理をするためのもの
     //データベースの情報を取得(仮)
