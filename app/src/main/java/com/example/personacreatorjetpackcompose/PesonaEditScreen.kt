@@ -46,6 +46,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -72,8 +73,12 @@ fun PersonaEditScreen(
 ) {
 
     var variableColor by remember { mutableStateOf(Color.Yellow) }//付箋がクリックされたときに変更する
+    var variableText by remember { mutableStateOf("") }//変数名が入る
 
-    val scrollState = rememberScrollState()//画面スクロールを有効にする
+    var textFields by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    val scrollStateAbove = rememberScrollState()//画面スクロールを有効にする上のbox
+    val scrollStateUnder = rememberScrollState()//画面スクロールを有効にする下のbox
 
     val stickNoteHeight = 80.dp//付箋の大きさ
     val stickNoteWidth = 80.dp//付箋の大きさ
@@ -120,6 +125,7 @@ fun PersonaEditScreen(
                                 //クリックされたときの処理
                                 .clickable {
                                     variableColor = item.color
+                                    variableText = item.personaVariable
                                 }
                         ) {
                             Text(text = item.text)
@@ -134,7 +140,7 @@ fun PersonaEditScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.White)
-                        .verticalScroll(scrollState)//垂直スクロールを有効にしている
+                        .verticalScroll(scrollStateAbove)//垂直スクロールを有効にしている
                         .border(
                             width = 1.dp,
                             color = variableColor,
@@ -145,7 +151,20 @@ fun PersonaEditScreen(
                             )
                         )
                 ) {
-                    // ベースとなるBoxの内容
+                    Column {
+                        for ((index, text) in textFields.withIndex()) {
+                            var currentText by remember(key1 = index) { mutableStateOf(text) } // 各TextFieldの状態を管理
+
+                            OutlinedTextField(
+                                value = currentText,
+                                onValueChange = { currentText = it },
+                                label = { Text("TextField ${index + 1}") }, // ラベルに番号を付ける
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .fillMaxWidth()
+                            )
+                        }
+                    }
                 }
 
             }//Column_End
@@ -174,7 +193,7 @@ fun PersonaEditScreen(
                 Box(
                     modifier = Modifier
                         .background(Color.White)
-                        .verticalScroll(scrollState)//垂直スクロールを有効にしている
+                        .verticalScroll(scrollStateUnder)//垂直スクロールを有効にしている
                 ) {
                     PersonaIntegration(navController,viewModel,personaName)//　　↓
                 }
@@ -192,6 +211,19 @@ fun PersonaEditScreen(
         }
 
     }//全体のcolumnの最後の}---------------------------------------------------------------
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ){
+        Button(
+            onClick = { textFields = textFields + "" },
+            modifier = Modifier
+                .offset { IntOffset(700, 1100) }//自分の好きな位置にボタンを表示
+        ) {
+            Text("追加")
+        }
+    }
 }
 
 //------------------------------------------------------------------------------------------
