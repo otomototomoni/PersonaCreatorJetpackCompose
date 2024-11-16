@@ -1,5 +1,8 @@
 package com.example.personacreatorjetpackcompose
 
+import android.content.ContentValues.TAG
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,15 +37,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.google.firebase.auth.userProfileChangeRequest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.job
 import kotlin.collections.toMutableMap
 
@@ -185,18 +193,20 @@ fun PersonaEditScreen(
 
     }//全体のcolumnの最後の}---------------------------------------------------------------
 }
+
+//------------------------------------------------------------------------------------------
 /*
     ペルソナについてまとめるところ
     ・ペルソナの画像、名前、年齢、性別
     ・ペルソナの課題、ペルソナのゴール、悩みなどをまとめる
  */
 
-data class UserData(
-    var age : Int = 0,
-    var gender : String = "",
-    var personaGoal : String = "",
-    var personaProblem : String = ""
-)
+//data class UserData(
+//    var age : String = "",
+//    var gender : String = "",
+//    var personaGoal : String = "",
+//    var personaProblem : String = ""
+//)
 
 @Composable
 fun PersonaIntegration(navController: NavHostController,viewModel: MainViewModel,personaName: String){
@@ -206,33 +216,41 @@ fun PersonaIntegration(navController: NavHostController,viewModel: MainViewModel
     //Rowの大きさを取得し、反映させるのが遅いため、derivedStateOfで動きを監視してから変更させている。
     //val halfRowWidth by remember(rowWidth) { derivedStateOf { rowWidth / 2 } }
 
-    //リアルタイム更新に必要なもの
-    val firestore = remember{ viewModel.db }
-    val documentRef = firestore.collection("${viewModel.auth.currentUser!!.uid}").document("${personaName}")
-    var isDisposed by remember { mutableStateOf(false) }
-
     //年齢とか色々
-    var userData by remember { mutableStateOf(UserData())}
+//    var userData by remember {
+//        mutableStateOf(
+//            UserData(
+//                age = "",
+//                gender = "",
+//                personaGoal = "",
+//                personaProblem = ""
+//            )
+//        )
+//    }
+    var userDataAge by remember { mutableStateOf("") }
+    var userDataGender by remember { mutableStateOf("") }
+    var userDataGoal by remember { mutableStateOf("") }
+    var userDataProblem by remember { mutableStateOf("") }
 
-    //リアルタイム処理に必要なやつ------------------------------------------------
-    LaunchedEffect(documentRef) {
-        val listenerRegistration = documentRef.addSnapshotListener { snapshot, error ->
-            if (isDisposed && snapshot != null && snapshot.exists()) {
-                userData = UserData(
-                    age = snapshot.getLong("age")?.toInt() ?: 0,
-                    gender = snapshot.getString("gender") ?: "",
-                    personaGoal = snapshot.getString("personaGoal") ?: "",
-                    personaProblem = snapshot.getString("personaProblem") ?: ""
-                )
-            }
-        }
-        //メモ：後で調べる
-        coroutineContext.job.invokeOnCompletion {
-            if(it == null){
-                listenerRegistration.remove()
+    val document = viewModel.db.collection("${viewModel.auth.currentUser!!.uid}").document("${personaName}")
+
+    //firebaseのデータを入れる。
+    LaunchedEffect (Unit) {
+        document.get().addOnSuccessListener { document ->
+            if (document.exists()) {
+                userDataAge = document.get("age").toString() ?: ""
+                userDataGender = document.get("gender").toString()?: ""
+                userDataGoal = document.get("Goal").toString()?: ""
+                userDataProblem = document.get("Problem").toString()?: ""
+            } else {
+                Log.d(TAG, "No such document")
             }
         }
     }
+
+    //Taastでエラーの出力、成功の出力に必要なcontext
+    val context = LocalContext.current
+    var hasFocus by remember { mutableStateOf(false) }
 
     //UI------------------------------------------------------------------------
     Column(
@@ -277,48 +295,113 @@ fun PersonaIntegration(navController: NavHostController,viewModel: MainViewModel
                     text = personaName,
                     fontSize = 30.sp
                 )
-                //年齢
+                //年齢-------------------------------------------------------
                 TextField(
-                    value = (userData.age).toString(),
-                    onValueChange = { newText ->
-                        userData.age = newText.toIntOrNull() ?: 0
-                        documentRef.update("age",newText.toIntOrNull() ?: 0)
+                    value = userDataAge,
+                    onValueChange = {newText ->
+                        userDataAge = newText ?: ""
+                        document.get()
+                            .addOnSuccessListener { snapshot ->
+                                if(snapshot.exists()){
+                                    document.update("age",newText).addOnSuccessListener {
+                                        Toast.makeText(context,"更新成功",Toast.LENGTH_SHORT).show()
+                                    }.addOnFailureListener {
+                                        Toast.makeText(context,"更新失敗",Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    document.set(mapOf("age" to newText))
+                                        .addOnSuccessListener {
+                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                                        }.addOnFailureListener {
+                                             e -> Log.w(TAG, "Error updating document", e)
+                                        }
+                                }//if_End
+                            }//get Success
+                            .addOnFailureListener {
+                                 e -> Log.w(TAG, "Error updating document", e)
+                            }
                     },
                     label = { Text("年齢") },
                     modifier = Modifier
                         .padding(
                             10.dp
                         )
-                        .height(30.dp)
                         .fillMaxWidth()
                 )
-                //性別
+                //性別---------------------------------------------------
                 TextField(
-                    value = userData.gender,
-                    onValueChange = { newText ->
-                        userData.gender = newText ?: ""
-                        documentRef.update("gender",newText ?: "")
+                    value = userDataGender,
+                    onValueChange = {newText ->
+                        userDataGender = newText ?: ""
                     },
                     label = { Text("性別") },
                     modifier = Modifier
+                        .onFocusChanged { focusState ->
+                            if(hasFocus && !focusState.hasFocus){
+                                document.get()
+                                    .addOnSuccessListener { snapshot ->
+                                        if(snapshot.exists()){
+                                            document.update("gender",userDataGender).addOnSuccessListener {
+                                                Toast.makeText(context,"更新成功",Toast.LENGTH_SHORT).show()
+                                            }.addOnFailureListener {
+                                                Toast.makeText(context,"更新失敗",Toast.LENGTH_SHORT).show()
+                                            }
+                                        } else {
+                                            document.set(mapOf("gender" to userDataGender))
+                                                .addOnSuccessListener {
+                                                    Log.d(TAG, "DocumentSnapshot successfully updated!")
+                                                }.addOnFailureListener {
+                                                        e -> Log.w(TAG, "Error updating document", e)
+                                                }
+                                        }//if_End
+                                    }//get Success
+                                    .addOnFailureListener {
+                                            e -> Log.w(TAG, "Error updating document", e)
+                                    }
+                            }
+                            hasFocus = focusState.hasFocus
+                        }
                         .padding(
                             10.dp
                         )
-                        .height(30.dp)
                         .fillMaxWidth()
-                )//TextField_End
+                )//TextField_End------------------------------------------
             }//Column_End
         }//Row_End
 
         //personaの目標
         OutlinedTextField(
-            value = userData.personaGoal,
+            value = userDataGoal,
             onValueChange = { newText ->
-                userData.personaGoal = newText ?: ""
-                documentRef.update("personaGoal",newText ?: "")
+                userDataGoal = newText ?: ""
             },
             label = { Text("Goal") },
             modifier = Modifier
+                .onFocusChanged { focusState ->
+                    if(hasFocus && !focusState.hasFocus){
+                        document.get()
+                            .addOnSuccessListener { snapshot ->
+                                if(snapshot.exists()){
+                                    document.update("Goal",userDataGoal).addOnSuccessListener {
+                                        Toast.makeText(context,"更新成功",Toast.LENGTH_SHORT).show()
+                                    }.addOnFailureListener {
+                                        Toast.makeText(context,"更新失敗",Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    document.set(mapOf("Goal" to userDataGoal))
+                                        .addOnSuccessListener {
+                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                                        }.addOnFailureListener {
+                                                e -> Log.w(TAG, "Error updating document", e)
+                                        }
+                                }//if_End
+                            }//get Success
+                            .addOnFailureListener {
+                                    e -> Log.w(TAG, "Error updating document", e)
+                            }
+                    }
+                    hasFocus = focusState.hasFocus
+                }
                 .padding(
                     15.dp
                 )
@@ -327,13 +410,37 @@ fun PersonaIntegration(navController: NavHostController,viewModel: MainViewModel
         )
         //personaの問題
         OutlinedTextField(
-            value = userData.personaProblem,
+            value = userDataProblem,
             onValueChange = { newText ->
-                userData.personaProblem = newText ?: ""
-                documentRef.update("personaProblem",newText ?: "")
+                userDataProblem = newText ?: ""
             },
             label = { Text("Problem") },
             modifier = Modifier
+                .onFocusChanged { focusState ->
+                    if(hasFocus && !focusState.hasFocus){
+                        document.get()
+                            .addOnSuccessListener { snapshot ->
+                                if(snapshot.exists()){
+                                    document.update("Problem",userDataProblem).addOnSuccessListener {
+                                        Toast.makeText(context,"更新成功",Toast.LENGTH_SHORT).show()
+                                    }.addOnFailureListener {
+                                        Toast.makeText(context,"更新失敗",Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    document.set(mapOf("Problem" to userDataProblem))
+                                        .addOnSuccessListener {
+                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                                        }.addOnFailureListener {
+                                                e -> Log.w(TAG, "Error updating document", e)
+                                        }
+                                }//if_End
+                            }//get Success
+                            .addOnFailureListener {
+                                    e -> Log.w(TAG, "Error updating document", e)
+                            }
+                    }
+                    hasFocus = focusState.hasFocus
+                }
                 .padding(
                     15.dp
                 )
