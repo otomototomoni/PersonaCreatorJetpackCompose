@@ -1,4 +1,4 @@
-package com.example.personacreatorjetpackcompose
+package ui
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
@@ -26,7 +26,7 @@ import com.google.firebase.firestore.SetOptions
 
  */
 @Composable
-fun PersonaAdditionScreen(navController: NavHostController,viewModel:MainViewModel){
+fun PersonaAdditionScreen(navController: NavHostController,viewModel: MainViewModel){
 
     var personaName = remember{ mutableStateOf("") }
 //    var personaAge = remember{ mutableStateOf("") }

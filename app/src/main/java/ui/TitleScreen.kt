@@ -1,4 +1,4 @@
-package com.example.personacreatorjetpackcompose
+package ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

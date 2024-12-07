@@ -1,7 +1,4 @@
-package com.example.personacreatorjetpackcompose
-
-import android.content.Context
-import android.icu.text.CaseMap
+package ui
 
 //navArgumentのimport
 import androidx.navigation.NavType
@@ -12,8 +9,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -68,7 +63,7 @@ class MainActivity : ComponentActivity() {
 fun CustomMainActivity(){//authはFirebaseの認証機能
 
     val navController = rememberNavController()//画面遷移の管理
-    val viewModel = viewModel< MainViewModel >()//firebaseのログイン機能に必要な情報をviewModelで取得
+    val viewModel = viewModel<MainViewModel>()//firebaseのログイン機能に必要な情報をviewModelで取得
 
     //画面遷移一覧
     NavHost(navController = navController, startDestination = "title") {
@@ -79,12 +74,16 @@ fun CustomMainActivity(){//authはFirebaseの認証機能
         composable("personaaddition") { PersonaAdditionScreen(navController,viewModel) }
 
         //ペルソナを編集する画面に移動するのに、ペルソナの名前で判断している。
-        composable("personaedit/{personaName}",
+        composable("personaedit/{personaName}/{userID}",
         arguments = listOf(navArgument("personaName") {
             type = NavType.StringType
-        })){backStackEntry ->
+        },navArgument("userID") {
+            type = NavType.StringType
+        })
+        ){backStackEntry ->
             val personaName = backStackEntry.arguments?.getString("personaName").toString()
-            PersonaEditScreen(navController,viewModel,personaName)
+            val userID = backStackEntry.arguments?.getString("userID").toString()
+            PersonaEditScreen(navController,viewModel,personaName,userID)
         }
     }
 }

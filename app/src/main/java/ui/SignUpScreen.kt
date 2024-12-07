@@ -1,7 +1,6 @@
-package com.example.personacreatorjetpackcompose
+package ui
 
 import android.content.ContentValues.TAG
-import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
@@ -20,13 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
 
 /*
 　サインアップするための画面
@@ -41,7 +35,7 @@ import com.google.firebase.ktx.Firebase
   メールアドレスがすでに使用されている場合に専用のエラーメッセージを出す。
  */
 @Composable
-fun SignUpScreen(navController: NavHostController,viewModel:MainViewModel){
+fun SignUpScreen(navController: NavHostController,viewModel: MainViewModel){
 
     val context = LocalContext.current//エラー、成功をToastで出力するために必要なcontext
     val email = remember{ mutableStateOf("") }//登録するメールアドレス
