@@ -2,10 +2,13 @@ package ui
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.Divider
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -15,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -95,10 +99,42 @@ fun LoginScreen(navController: NavHostController,viewModel: MainViewModel){
             Text(text = "ログイン")
         }//button-end
 
+        //spaceを開ける
+        //新規登録を一番下に表示したいため
+        Spacer(
+            modifier = Modifier
+                .weight(1f)//全体に対してできる限りのスペースをとる
+        )
+
+        //横線
+        Divider(
+            color = Color.Gray,
+            thickness = 1.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 10.dp,
+                    bottom = 10.dp
+                )
+        )
+        //新規登録
+        Text(
+            text = "登録がまだの方はこちらから",
+            color = Color.Gray,
+            modifier = Modifier
+                .padding(bottom = 10.dp)
+        )
         //新規登録ボタン-----------------
-        Button(onClick = {
+        Button(
+            modifier = Modifier
+                .padding(bottom = 20.dp),
+            //クリックしたら新規登録画面へ遷移
+            onClick = {
             navController.navigate("signup")
-        }) {
+            }
+        ) {
             Text(text = "新規登録")
         }//button text
     }//column

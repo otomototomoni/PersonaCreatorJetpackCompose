@@ -4,6 +4,7 @@ import android.content.ContentValues.TAG
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -49,29 +50,22 @@ fun SignUpScreen(navController: NavHostController,viewModel: MainViewModel){
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        Text("新規ユーザ登録")//一番上に表示される文字。
+        //一番上に表示される文字。
+        Text("新規ユーザ登録")
 
         //emailを入力するところ
         OutlinedTextField(
             value = email.value,
             onValueChange = {email.value = it},
-            label = { Text("e-mail") },
-            modifier = Modifier
-                .width(200.dp)
-                .height(56.dp)
-        )//outlinedTextField
+            label = { Text("e-mail") }
+        )
 
         //passwordを入力するところ
         OutlinedTextField(
             value = password.value,
             onValueChange = {password.value = it},
-            label = { Text("password") },
-            modifier = Modifier
-                .padding(top = 10.dp)
-                .width(200.dp)
-                .height(56.dp)
-        )//outlinedTextField
+            label = { Text("password") }
+        )
 
         //新規登録ボタン-----------------------------
         Button(onClick = {
@@ -93,7 +87,6 @@ fun SignUpScreen(navController: NavHostController,viewModel: MainViewModel){
                         password.value
                     )//新しいユーザーアカウントを作成。emailとpasswordを参照している
                     .addOnCompleteListener { task ->//アカウント作成処理が完了したときに実行されるリスナーをお登録する。taskオブジェクトには、処理が成功したかどうか、エラーが発生したかどうかなどの情報が含まれている。
-
                         //Firebase Authentication 登録成功
                         if (task.isSuccessful) {
                             val user = viewModel.auth.currentUser//auth.currentUserで登録されたユーザー情報を取得できる
@@ -105,7 +98,7 @@ fun SignUpScreen(navController: NavHostController,viewModel: MainViewModel){
                                 "password" to password.value
                             )
                             //データベースのコレクションの作成とデータの保存
-                                viewModel.db.collection("users").document(user!!.uid)
+                            viewModel.db.collection("users").document(user!!.uid)
                                 .set(userData)
                                 //firestoreへのデータ書き込みが成功した場合に実行される
                                 .addOnSuccessListener {
@@ -117,25 +110,15 @@ fun SignUpScreen(navController: NavHostController,viewModel: MainViewModel){
                                 .addOnFailureListener { e ->//eをリスナーの引数として宣言すると、リスナー内でeを参照できる。
                                     Log.w(TAG, "Error writing document", e)
                                 }
-
-                        //Firebase Authentication 登録失敗
+                            //Firebase Authentication 登録失敗
                         } else {
-                            //本番では使わない
+                            //エラーを取得
                             val exception = task.exception//task.exceptionでエラーの情報を取得できる
-                            //ログ出力ライブラリかカスタム例外ハンドラを使用する↓
-                            exception?.printStackTrace()//printStackTraceはデバッグ用で本番環境では使わない
-
                             //エラーメッセージを表示する
                             //第一引数のcontextは上で定義したもの
-                            Toast.makeText(
-                                context,
-                                "サインアップに失敗しました",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast.makeText(context, "サインアップに失敗しました", Toast.LENGTH_SHORT).show()
                             Log.e(TAG, "サインアップエラー", exception)//ログに記録
-
                         }//task.isSuccessful-if-end
-
                     }//addOnCompleteListener-end
             }//null if-end
         },//onClick-end
@@ -144,16 +127,22 @@ fun SignUpScreen(navController: NavHostController,viewModel: MainViewModel){
                 .padding(top = 10.dp)
                 .width(200.dp)
         ){
-            Text(text = "新規登録")
+            Text(text = "登録")
         }//button text
+
+        Spacer(
+            modifier = Modifier
+                .weight(1f)
+        )
 
         //ログイン画面へ戻るボタン--------------------
         Button(onClick = {
             navController.navigate("login")
         },
             modifier = Modifier
-                .padding(top = 10.dp)
-                .width(200.dp)
+                .padding(
+                    bottom = 20.dp
+                )
         ){
             Text(text = "ログイン画面に戻る")
         }

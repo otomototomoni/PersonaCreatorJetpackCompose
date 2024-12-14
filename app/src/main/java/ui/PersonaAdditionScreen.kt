@@ -29,12 +29,8 @@ import com.google.firebase.firestore.SetOptions
 fun PersonaAdditionScreen(navController: NavHostController,viewModel: MainViewModel){
 
     var personaName = remember{ mutableStateOf("") }
-//    var personaAge = remember{ mutableStateOf("") }
-//    var personaHeight = remember{ mutableStateOf("") }
-//    var personaWeight = remember{ mutableStateOf("") }
-//    var personaSex = remember{ mutableStateOf("") }
 
-    val personaDocuments = viewModel.db.collection("${viewModel.auth.currentUser!!.uid}").document("Persona")
+    val personaDocuments = viewModel.db.collection("${viewModel.auth?.currentUser?.uid}").document("Persona")
     val context = LocalContext.current//Taastでエラーの出力、成功の出力に必要なcontext
 
     Column (

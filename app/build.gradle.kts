@@ -55,9 +55,9 @@ android {
 dependencies {
 
     //navArgumentについての依存関係
-    implementation("androidx.navigation:navigation-compose:2.7.7")
+    implementation("androidx.navigation:navigation-compose:2.8.4")
     // Import the BoM for the Firebase platform
-    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     // Add the dependency for the Firebase Authentication library
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation("com.google.firebase:firebase-auth-ktx")
@@ -67,7 +67,7 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore")
 
     implementation("androidx.compose.ui:ui:1.7.5") // Jetpack Compose UI ライブラリ
-    implementation("androidx.compose.foundation:foundation:1.3.0") // Foundation ライブラリ (LazyColumn などを含む)
+    implementation("androidx.compose.foundation:foundation:1.7.5") // Foundation ライブラリ (LazyColumn などを含む)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

@@ -4,6 +4,7 @@ import android.content.ContentValues.TAG
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -27,31 +29,40 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.tasks.await
 
 /*
     それぞれのペルソナの編集画面
@@ -71,20 +82,21 @@ fun PersonaEditScreen(
     userID: String
 ) {
     val document = viewModel.db.collection("${userID}").document("${personaName}")
-
-    var variableColor by remember { mutableStateOf(Color.Yellow) }//付箋がクリックされたときに変更する
-    var variableText by remember { mutableStateOf("Geographic") }//データベースに入れるためのフィールドを取得
-
+    //付箋がクリックされたときに変更する
+    var variableColor by remember { mutableStateOf(Color.Yellow) }
+    //データベースに入れるためのフィールドを取得
+    var variableText by remember { mutableStateOf("Geographic") }
+    //TextFieldがフォーカスされているかどうかを判断
     var hasFocus by remember { mutableStateOf(false) }
-
+    //行動変数や地理変数などTextFieldに入力された値を保存
     var textFields by remember { mutableStateOf<List<String>>(emptyList()) }
-
+    //画面のスクロールするためのもの
     val scrollStateAbove = rememberScrollState()//画面スクロールを有効にする上のbox
     val scrollStateUnder = rememberScrollState()//画面スクロールを有効にする下のbox
-
-    val stickNoteHeight = 80.dp//付箋の大きさ
-    val stickNoteWidth = 80.dp//付箋の大きさ
-
+    //付箋の大きさ
+    val stickNoteHeight = 80.dp
+    val stickNoteWidth = 80.dp
+    //エラー処理に使用するcontext
     val context = LocalContext.current
 
     val items = listOf(
@@ -93,20 +105,28 @@ fun PersonaEditScreen(
         Item("Psychographic", "心理的変数", Color.Blue),
         Item("Behavioral", "行動変数", Color.Green)
     )
-
+    //この変数をtrueにする処理をクリックの処理に記述することで使用できないことを通知するTextを表示
+    var unavailableShow by remember { mutableStateOf(false) }
     //navigationメニューで使用するやつ
     var menuVisible by remember { mutableStateOf(false) }
     val alpha by animateFloatAsState(if (menuVisible) 1f else 0f)
-    //navigationメニューで使用するボタンのＸ軸の上に並べたいため、ボタンのｘ軸を取得する変数
-//    var navigationButtonX by remember{ mutableStateOf(0f) }
-//    var navigationButtonY by remember{ mutableStateOf(0f) }
 
+    //画面全体の背景色
+    var backgroundColor by remember { mutableStateOf(lerp(Color.White,variableColor,0.3f))}
+    var borderColor by remember { mutableStateOf(lerp(Color.Black,variableColor,0.8f))}
+    //付箋がクリックされて変更されたときに背景と枠線の色も変える
+    LaunchedEffect(variableColor) {
+        backgroundColor = lerp(Color.White,variableColor,0.1f)
+        borderColor = lerp(Color.Black,variableColor,0.8f)
+    }
+    //画面全体--------------------------------------------------------------------
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = Color.White)//背景色が変更される
+            .background(color = backgroundColor)//背景色が変更される
     ) {
         //-----------------------------------------------------------------上半分
+        //BoxWithConstraintsで利用可能な最大幅と最大高さを取得できる。(MaxWidth等)
         BoxWithConstraints {
             val boxMaxWidth = maxWidth
             val boxMaxHeight = maxHeight
@@ -114,6 +134,13 @@ fun PersonaEditScreen(
                 modifier = Modifier
                     .padding(16.dp)
                     .height(boxMaxHeight / 2)//画面全体の1/2を変数を記述するところにする
+                    .clip(
+                        RoundedCornerShape(
+                            topEnd = 16.dp,
+                            bottomStart = 16.dp,
+                            bottomEnd = 16.dp
+                        )
+                    )
             ) {
                 //ーーーーーーーーーーーーーーーー上の付箋部分
                 LazyRow() {
@@ -122,8 +149,7 @@ fun PersonaEditScreen(
                             modifier = Modifier
                                 //boxを曲線にする
                                 .clip(
-                                    RoundedCornerShape
-                                        (
+                                    RoundedCornerShape(
                                         topStart = 16.dp,
                                         topEnd = 16.dp,
                                     )
@@ -145,19 +171,27 @@ fun PersonaEditScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.White)
                         .verticalScroll(scrollStateAbove)//垂直スクロールを有効にしている
                         .border(
-                            width = 1.dp,
-                            color = variableColor,
+                            width = 2.dp,
+                            color = borderColor,
                             shape = RoundedCornerShape(
                                 topEnd = 16.dp,
                                 bottomStart = 16.dp,
                                 bottomEnd = 16.dp
                             )
                         )
+                        .clip(
+                            RoundedCornerShape(
+                                topEnd = 16.dp,
+                                bottomStart = 16.dp,
+                                bottomEnd = 16.dp
+                            )
+                        )
+                        //clipの後に背景をつけないと色が枠の外にはみ出る
+                        .background(Color.White)
                 ) {
-                    Column {
+                    Column() {
                         LaunchedEffect(variableText){
                             textFields = emptyList()
                             document.get().addOnSuccessListener { document ->
@@ -174,6 +208,12 @@ fun PersonaEditScreen(
                                 onValueChange = { currentText = it },
                                 label = { Text("TextField ${index + 1}") }, // ラベルに番号を付ける
                                 modifier = Modifier
+                                    .padding(
+                                        start = 10.dp,
+                                        end = 10.dp,
+                                        bottom = 8.dp
+                                    )
+                                    .fillMaxWidth()
                                     .onFocusChanged { focusState ->
                                         //このTextFieldから出ようとしたときにだけfirestoreを更新する処理
                                         if (hasFocus && !focusState.hasFocus) {
@@ -186,7 +226,6 @@ fun PersonaEditScreen(
                                                             snapshot.get(variableText) as? List<String>
                                                         val updateList =
                                                             List?.toMutableList() ?: mutableListOf()
-
                                                         //if文がないと空のlistにaccessしようとしていることになるから
                                                         if (index < updateList.size) {
                                                             updateList[index] = currentText
@@ -243,8 +282,6 @@ fun PersonaEditScreen(
                                         }
                                         hasFocus = focusState.hasFocus
                                     }
-                                    .padding(bottom = 8.dp)
-                                    .fillMaxWidth()
                             )
                         }
                     }
@@ -261,19 +298,34 @@ fun PersonaEditScreen(
                     .padding(16.dp)
                     .height(boxMaxHeight / 4 * 3)
                     .width(boxMaxWidth)
-                    .background(Color.White)
+                    //枠線の四隅を曲線にしている。
                     .border(
-                        width = 1.dp,
+                        width = 2.dp,
                         color = Color.Black,
                         shape = RoundedCornerShape(
                             16.dp
                         )
                     )
+                    //表示範囲を曲線の内側だけにしている。
+                    .clip(
+                        RoundedCornerShape(
+                            16.dp
+                        )
+                    )
+                    //clipの後に背景をつけないと色が枠の外にはみ出る
+                    .background(Color.White)
             ) {
+                /*
+                    ペルソナの目標やゴール、年齢や性別を詳しく記載するところ
+                    PersonaIntegration関数をBoxの中で実行している。
+                 */
                 Box(
                     modifier = Modifier
                         .background(Color.White)
                         .verticalScroll(scrollStateUnder)//垂直スクロールを有効にしている
+                        .clip(
+                            RoundedCornerShape(16.dp)
+                        )
                 ) {
                     PersonaIntegration(navController,viewModel,personaName,userID)//　　↓
                 }
@@ -284,15 +336,6 @@ fun PersonaEditScreen(
             onClick = { menuVisible = !menuVisible },
             modifier = Modifier
                 .align(Alignment.End)
-                /*
-                このボタンのＸ軸を取得
-                　onGloballyPositioned はコンポサブる関数がレイアウトされた後に呼び出される
-                　LayoutCoordinatesクラスに属しており、そのクラスのpositionInRoot()メソッドでボタンのＸ軸を取得
-                */
-//                .onGloballyPositioned { coordinates ->
-//                    navigationButtonX = coordinates.positionInRoot().x
-//                    navigationButtonY = coordinates.positionInRoot().y
-//                }
         ) {
             Text("Menu")
         }
@@ -349,14 +392,16 @@ fun PersonaEditScreen(
                 var URVisible by remember { mutableStateOf(false) }
                 val UROffset by animateFloatAsState(if (URVisible) 0f else 2000f)
                 Button(
-                    onClick = { },
+                    onClick = {
+                        unavailableShow = true
+                    },
                     modifier = Modifier
                         .offset(y = UROffset.dp)
                         .padding(
                             top = 10.dp
                         )
                 ) {
-                    Text("ユーザーリサーチ(commingsoom)")
+                    Text("ユーザーリサーチ(coming soon)")
                 }
 
                 var ShareVisible by remember { mutableStateOf(false) }
@@ -406,7 +451,7 @@ fun PersonaEditScreen(
             modifier = Modifier
                 .offset(y = (ShareBoxOffset).dp)
                 .padding(
-                    top = (0.4 * LocalConfiguration.current.screenHeightDp).dp
+                    top = (0.3 * LocalConfiguration.current.screenHeightDp).dp
                 )
                 .background(Color.White)
                 .size(250.dp, 300.dp)
@@ -444,14 +489,47 @@ fun PersonaEditScreen(
             }
         }
     }//ShareBoxColumn_end
+/*
+    まだ使用できない機能を使用しようとしたときに使えないことを示す
+    変数unavailableShowをtrueにする処理をクリックの処理として設けることによってこの処理を使用できる。
+ */
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.White.copy(0f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            AnimatedVisibility(visible = unavailableShow) {
+                Text(
+                    text = "この機能は現在使用できません。",
+                    fontWeight = FontWeight.Bold,
+                    )
+            }
+        }
+    }
+    LaunchedEffect(unavailableShow) {
+        if(unavailableShow) {
+            delay(2000)
+            unavailableShow = false
+        }
+    }
 }//function_End---------------------------------------------------------------------------
 
 /*
     共有のための処理
     TextFieldに入力されたメールアドレスをfirebaseで探してそのユーザーに共有する。
  */
-fun Share(viewModel: MainViewModel,shareEmail : String,personaName : String,context : Context){
-
+fun Share(
+    viewModel: MainViewModel,
+    shareEmail : String,
+    personaName : String,
+    context : Context
+){
     val usersCollection = viewModel.db.collection("users")
     var succes = false
     usersCollection.get()
@@ -464,11 +542,13 @@ fun Share(viewModel: MainViewModel,shareEmail : String,personaName : String,cont
                     val data = mapOf(
                         "shareUserIDs" to FieldValue.arrayUnion("${viewModel.auth.currentUser!!.uid},${personaName}")
                     )
-                    //documentが存在した場合にはupdate,存在しなかった場合にはset
-                    if(document.exists()) {
-                        viewModel.db.collection("${document.id}").document("sharingPersonas").update(data)
+                    //sharingPersonasドキュメントを取得
+                    var shareDocument = viewModel.db.collection("${document.id}").document("sharingPersonas")
+                    //sharingPersonasでisSuccessfulがtrueならset,そうじゃないならupdate
+                    if(shareDocument.get().isSuccessful) {
+                        shareDocument.set(data)
                     }else{
-                        viewModel.db.collection("${document.id}").document("sharingPersonas").set(data)
+                        shareDocument.update(data)
                     }
                     succes = true
                 }
@@ -495,65 +575,62 @@ fun Share(viewModel: MainViewModel,shareEmail : String,personaName : String,cont
  */
 
 @Composable
-fun PersonaIntegration(navController: NavHostController, viewModel: MainViewModel, personaName: String,userID: String){
-
-    var userDataAge by remember { mutableStateOf("") }
-    var userDataGender by remember { mutableStateOf("") }
-    var userDataGoal by remember { mutableStateOf("") }
-    var userDataProblem by remember { mutableStateOf("") }
-
-    val document = viewModel.db.collection("${userID}").document("${personaName}")
-
-    //firebaseのデータを入れる。
-    LaunchedEffect (Unit) {
-        document.get().addOnSuccessListener { document ->
-            if (document.exists()) {
-                userDataAge = document.get("age").toString() ?: ""
-                userDataGender = document.get("gender").toString()?: ""
-                userDataGoal = document.get("Goal").toString()?: ""
-                userDataProblem = document.get("Problem").toString()?: ""
-            } else {
-                Log.d(TAG, "No such document")
-            }
-        }
-    }
-
+fun PersonaIntegration(
+    navController: NavHostController,
+    viewModel: MainViewModel,
+    personaName: String,
+    userID: String,
+){
     //Taastでエラーの出力、成功の出力に必要なcontext
     val context = LocalContext.current
+    //TextFieldで入力しているかどうかを判断
     var hasFocus by remember { mutableStateOf(false) }
+    val document = viewModel.db.collection("${userID}").document("${personaName}")
+    //この機能が使用できないことを表示
+    var unavaliableShow by remember { mutableStateOf<Boolean>(false) }
+
+    //インスタンスの作成
+    val cosutom = CustomUI(userID,personaName,viewModel,context)
 
     //UI------------------------------------------------------------------------
     Column(
         modifier = Modifier
             .fillMaxSize()
-    )
-    {
+            .clip(RoundedCornerShape(8.dp))
+    ) {
         Row(
             modifier = Modifier
                 .padding(10.dp)
-            //Rowのwidthの大きさを取得
-//            .onGloballyPositioned { coordinates ->
-//                rowWidth = coordinates.size.width
-//            }
+                .clip(RoundedCornerShape(8.dp))
         ) {
             //画像の表示--------------------------------
             Box(
                 modifier = Modifier
-                    .size(150.dp)
+                    .size((LocalConfiguration.current.screenWidthDp * 0.5).dp)
                     .background(Color.White)
                     .border(
                         width = 1.dp,
                         color = Color.Black,
                         shape = RoundedCornerShape(8.dp)
                     )
+                    .clip(
+                        RoundedCornerShape(8.dp)
+                    )
+                    .clickable {
+                        /*
+                        画像を入れれるようにする
+                        入れた画像をMainScrollScreen.ktに表示できるようにする。
+                        firebaseStorageが課金が必要そうなため断念
+                         */
+                        unavaliableShow = true
+                    }
             ) {
                 Text(
-                    text = "NoImage",
+                    text = "   NoImage\n(coming soon)",
                     modifier = Modifier
                         .align(Alignment.Center)
                 )
             }//Box_End
-
             //名前と年齢の表示--------------------------
             Column(
                 modifier = Modifier
@@ -566,198 +643,230 @@ fun PersonaIntegration(navController: NavHostController, viewModel: MainViewMode
                     fontSize = 30.sp
                 )
                 //年齢-------------------------------------------------------
-                TextField(
-                    value = userDataAge,
-                    onValueChange = {newText ->
-                        userDataAge = newText ?: ""
-                        document.get()
-                            .addOnSuccessListener { snapshot ->
-                                if(snapshot.exists()){
-                                    document.update("age",newText).addOnSuccessListener {
-                                        Toast.makeText(context,"更新成功",Toast.LENGTH_SHORT).show()
-                                    }.addOnFailureListener {
-                                        Toast.makeText(context,"更新失敗",Toast.LENGTH_SHORT).show()
-                                    }
-                                } else {
-                                    document.set(mapOf("age" to newText))
-                                        .addOnSuccessListener {
-                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
-                                        }.addOnFailureListener {
-                                             e -> Log.w(TAG, "Error updating document", e)
-                                        }
-                                }//if_End
-                            }//get Success
-                            .addOnFailureListener {
-                                 e -> Log.w(TAG, "Error updating document", e)
-                            }
-                    },
-                    label = { Text("年齢") },
-                    modifier = Modifier
-                        .padding(
-                            10.dp
-                        )
-                        .fillMaxWidth()
+                cosutom.FeaturesTextField(
+//                    userDataAge,
+                    "年齢",
+                    "age",
+                    hasFocus
                 )
                 //性別---------------------------------------------------
-                TextField(
-                    value = userDataGender,
-                    onValueChange = {newText ->
-                        userDataGender = newText ?: ""
-                    },
-                    label = { Text("性別") },
-                    modifier = Modifier
-                        .onFocusChanged { focusState ->
-                            if (hasFocus && !focusState.hasFocus) {
-                                document
-                                    .get()
-                                    .addOnSuccessListener { snapshot ->
-                                        if (snapshot.exists()) {
-                                            document
-                                                .update("gender", userDataGender)
-                                                .addOnSuccessListener {
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            "更新成功",
-                                                            Toast.LENGTH_SHORT
-                                                        )
-                                                        .show()
-                                                }
-                                                .addOnFailureListener {
-                                                    Toast
-                                                        .makeText(
-                                                            context,
-                                                            "更新失敗",
-                                                            Toast.LENGTH_SHORT
-                                                        )
-                                                        .show()
-                                                }
-                                        } else {
-                                            document
-                                                .set(mapOf("gender" to userDataGender))
-                                                .addOnSuccessListener {
-                                                    Log.d(
-                                                        TAG,
-                                                        "DocumentSnapshot successfully updated!"
-                                                    )
-                                                }
-                                                .addOnFailureListener { e ->
-                                                    Log.w(TAG, "Error updating document", e)
-                                                }
-                                        }//if_End
-                                    }//get Success
-                                    .addOnFailureListener { e ->
-                                        Log.w(TAG, "Error updating document", e)
-                                    }
-                            }
-                            hasFocus = focusState.hasFocus
-                        }
-                        .padding(
-                            10.dp
-                        )
-                        .fillMaxWidth()
-                )//TextField_End------------------------------------------
+                cosutom.FeaturesTextField(
+//                    userDataGender,
+                    "性別",
+                    "gender",
+                    hasFocus
+                )
             }//Column_End
         }//Row_End
 
-        //personaの目標
-        OutlinedTextField(
-            value = userDataGoal,
-            onValueChange = { newText ->
-                userDataGoal = newText ?: ""
-            },
-            label = { Text("Goal") },
-            modifier = Modifier
-                .onFocusChanged { focusState ->
-                    if (hasFocus && !focusState.hasFocus) {
-                        document
-                            .get()
-                            .addOnSuccessListener { snapshot ->
-                                if (snapshot.exists()) {
-                                    document
-                                        .update("Goal", userDataGoal)
-                                        .addOnSuccessListener {
-                                            Toast
-                                                .makeText(context, "更新成功", Toast.LENGTH_SHORT)
-                                                .show()
-                                        }
-                                        .addOnFailureListener {
-                                            Toast
-                                                .makeText(context, "更新失敗", Toast.LENGTH_SHORT)
-                                                .show()
-                                        }
-                                } else {
-                                    document
-                                        .set(mapOf("Goal" to userDataGoal))
-                                        .addOnSuccessListener {
-                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
-                                        }
-                                        .addOnFailureListener { e ->
-                                            Log.w(TAG, "Error updating document", e)
-                                        }
-                                }//if_End
-                            }//get Success
-                            .addOnFailureListener { e ->
-                                Log.w(TAG, "Error updating document", e)
-                            }
-                    }
-                    hasFocus = focusState.hasFocus
-                }
-                .padding(
-                    15.dp
-                )
-                .height(300.dp)
-                .fillMaxWidth()
+        //ペルソナのゴールについて記載するところ
+        cosutom.SentenceTextField(
+//            userDataGoal,
+            "Goal",
+            hasFocus
         )
-        //personaの問題
-        OutlinedTextField(
-            value = userDataProblem,
-            onValueChange = { newText ->
-                userDataProblem = newText ?: ""
-            },
-            label = { Text("Problem") },
-            modifier = Modifier
-                .onFocusChanged { focusState ->
-                    if (hasFocus && !focusState.hasFocus) {
-                        document
-                            .get()
-                            .addOnSuccessListener { snapshot ->
-                                if (snapshot.exists()) {
-                                    document
-                                        .update("Problem", userDataProblem)
-                                        .addOnSuccessListener {
-                                            Toast
-                                                .makeText(context, "更新成功", Toast.LENGTH_SHORT)
-                                                .show()
-                                        }
-                                        .addOnFailureListener {
-                                            Toast
-                                                .makeText(context, "更新失敗", Toast.LENGTH_SHORT)
-                                                .show()
-                                        }
-                                } else {
-                                    document
-                                        .set(mapOf("Problem" to userDataProblem))
-                                        .addOnSuccessListener {
-                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
-                                        }
-                                        .addOnFailureListener { e ->
-                                            Log.w(TAG, "Error updating document", e)
-                                        }
-                                }//if_End
-                            }//get Success
-                            .addOnFailureListener { e ->
-                                Log.w(TAG, "Error updating document", e)
-                            }
-                    }
-                    hasFocus = focusState.hasFocus
-                }
-                .padding(
-                    15.dp
-                )
-                .height(300.dp)
-                .fillMaxWidth()
+        //ペルソナの問題について記載するところ
+        cosutom.SentenceTextField(
+//            userDataProblem,
+            "Problem",
+            hasFocus
         )
-
     }//Column_End
+
+    //クリックした機能が使用できないことを表示する画面
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            AnimatedVisibility(visible = unavaliableShow) {
+                Text(
+                    text = "この機能は現在使用できません",
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+    //unavaliableShowがtrueのとき、2秒後にunavaliableShowをfalseにする
+    LaunchedEffect(unavaliableShow) {
+        if (unavaliableShow) {
+            delay(2000)
+            unavaliableShow = false
+        }
+    }
 }//function_End
+
+//-------------------------------------------------------------------------------
+/*
+    共通するデータが多くあったのでクラスで保存
+    そこからTextFieldなどを表示できるようにする
+    メソッド
+    ・SentenceTextField(保存したいデータ、データの名前、TextFieldがフォーカスされているかどうか)...長い文章で記載するときに使用
+    ・FeaturesTextField(保存したいデータ、データの名前、データベースに保存するフィールド名、TextFieldがフォーカスされているかどうか)...年齢性別など短いものに
+ */
+class CustomUI(
+    val userID: String,
+    val personaName: String,
+    val viewModel: MainViewModel,
+    val context: Context
+) {
+    val document = viewModel.db.collection("${userID}").document("${personaName}")
+    /*
+    保存する要素を格納するところ
+    例：ペルソナの目的や問題などの文章で記載するところの処理
+ */
+    @Composable
+    fun SentenceTextField(
+        dataText: String,
+        Focus: Boolean
+    ) {
+        //TextFieldに入力された値を格納
+        var data by remember { mutableStateOf("") }
+        //TextFieldがフォーカスされているかどうかを判断
+        var hasFocus by remember { mutableStateOf(Focus) }
+        //fireStoreの変更を監視して変更があった場合に変数に入れる
+//        document.addSnapshotListener{ snapshot, e ->
+//            if (e != null) {
+//                Log.w(TAG, "Listen failed.", e)
+//                return@addSnapshotListener
+//            }
+//            if (snapshot != null && snapshot.exists()) {
+//                data = snapshot.getString(dataText) ?: ""
+//            } else {
+//                Log.d(TAG, "Current data: null")
+//            }
+//        }
+        //firebaseのデータを入れる。Unitは最初に１回だけ起動される。再起動を行わない
+        LaunchedEffect(Unit) {
+            document.get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        data = document.get(dataText).toString() ?: ""
+                    } else {
+                        Log.d(TAG, "No such document")
+                    }
+                }
+        }
+        //TextFieldで入力された値を表示
+        OutlinedTextField(
+            value = data,
+            onValueChange = { newText ->
+                data = newText ?: ""
+            },
+            label = { Text(dataText) },
+            modifier = Modifier
+                .padding(5.dp)
+                .fillMaxSize()
+                .onFocusChanged { focusState ->
+                    if (hasFocus && !focusState.hasFocus) {
+                        document
+                            .get()
+                            .addOnSuccessListener { snapshot ->
+                                if (snapshot.exists()) {
+                                    document
+                                        .update(dataText, data)
+                                        .addOnSuccessListener {
+                                            Toast
+                                                .makeText(context, "更新成功", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                        .addOnFailureListener {
+                                            Toast
+                                                .makeText(context, "更新失敗", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                } else {
+                                    document
+                                        .set(mapOf(dataText to data))
+                                        .addOnSuccessListener {
+                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.w(TAG, "Error updating document", e)
+                                        }
+                                }//if_End
+                            }//get Success
+                            .addOnFailureListener { e ->
+                                Log.w(TAG, "Error updating document", e)
+                            }
+                    }
+                    hasFocus = focusState.hasFocus
+                }
+        )
+    }//SentenceTextField_function_end
+
+    /*
+    年齢や性別など簡易的な特徴をまとめておくためのTextFieldを入れるために使用する。
+     */
+    @Composable
+    fun FeaturesTextField(
+        dataText: String,
+        dbFieldText: String,
+        Focus: Boolean,//TextFieldがフォーカスされているかどうか
+    ){
+        var hasFocus by remember { mutableStateOf(Focus) }
+        var userDataValue by remember { mutableStateOf("") }
+
+        LaunchedEffect(Unit) {
+            document.get()
+                .addOnSuccessListener { document ->
+                    if (document.exists()) {
+                        userDataValue = document.get(dbFieldText).toString() ?: ""
+                    } else {
+                        Log.d(TAG, "No such document")
+                    }
+                }
+        }
+
+        TextField(
+            value = userDataValue,
+            onValueChange = {newText ->
+                userDataValue = newText ?: ""
+            },
+            label = { Text(dataText) },
+            modifier = Modifier
+                .padding(5.dp)
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    if (hasFocus && !focusState.hasFocus) {
+                        document
+                            .get()
+                            .addOnSuccessListener { snapshot ->
+                                if (snapshot.exists()) {
+                                    document
+                                        .update(dbFieldText, userDataValue)
+                                        .addOnSuccessListener {
+                                            Toast
+                                                .makeText(context, "更新成功", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                        .addOnFailureListener {
+                                            Toast
+                                                .makeText(context, "更新失敗", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                } else {
+                                    document
+                                        .set(mapOf(dbFieldText to userDataValue))
+                                        .addOnSuccessListener {
+                                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Log.w(TAG, "Error updating document", e)
+                                        }
+                                }//if_End
+                            }//get Success
+                            .addOnFailureListener { e ->
+                                Log.w(TAG, "Error updating document", e)
+                            }
+                    }
+                    hasFocus = focusState.hasFocus
+                }
+        )//TextField_end
+    }//FeaturesTextField_function_end
+}//class_end

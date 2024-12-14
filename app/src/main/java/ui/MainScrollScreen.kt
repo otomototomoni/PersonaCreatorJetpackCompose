@@ -2,6 +2,7 @@ package ui
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.content.contentReceiver
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.navigation.NavHostController
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Divider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
@@ -42,9 +44,12 @@ fun MainScrollScreen(navController: NavHostController,viewModel: MainViewModel){
     val scrollState = rememberScrollState()//スクロール状態の管理をするためのもの
     val scrollStateUnder = rememberScrollState()//スクロール状態の管理をするためのもの
     //データベースの情報を取得(仮)
-    val userpersonas = viewModel.db.collection("${viewModel.auth.currentUser!!.uid}").document("Persona")//collectionとdocumentを指定
-    val sharePersonas = viewModel.db.collection("${viewModel.auth.currentUser!!.uid}").document("sharingPersonas")//collectionとdocumentを指定
-    var dbpersonas by remember { mutableStateOf<List<String>>(emptyList())}//データベースに入っているペルソナを取得する用
+    val userpersonas = viewModel.db.collection("${viewModel.auth?.currentUser?.uid}").document("Persona")//collectionとdocumentを指定　　auth?.currentUser?.としないとnullExpointerが発生して強制終了する。
+    //shareされているペルソナを取得するパス
+    val sharePersonas = viewModel.db.collection("${viewModel.auth?.currentUser?.uid}").document("sharingPersonas")//collectionとdocumentを指定
+    //データベースに入っているペルソナを格納するところ
+    var dbpersonas by remember { mutableStateOf<List<String>>(emptyList())}
+    //シェアされているペルソナを格納するところ
     var dbSharePersonas by remember { mutableStateOf<List<String>>(emptyList())}
 
     Box(
@@ -70,19 +75,37 @@ fun MainScrollScreen(navController: NavHostController,viewModel: MainViewModel){
                     }
                 //ペルソナの数だけボタンを表示する。
                 dbpersonas.forEach { persona ->
-                    PersonaBox(navController,persona,"${viewModel.auth.currentUser!!.uid}")
+                    PersonaBox(navController,persona,"${viewModel.auth?.currentUser?.uid}")
                 }
         }//column-end
     }//box-end
+    //線を入れる
+    Divider(
+        color = Color.Gray,
+        thickness = 1.dp,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(
+                start = 10.dp,
+                end = 10.dp,
+                top = 20.dp,
+                bottom = 5.dp
+                )
+    )
+    Text(
+        modifier = Modifier
+            .padding(bottom = 20.dp),
+        text = "シェアされているペルソナ"
+    )
     /*
     　　シェアされたペルソナを表示する
+        シェアされたペルソナがなかった場合にはないことを示すテキストを表示
      */
     Box(
         modifier = Modifier
             .fillMaxHeight()
             .width((0.8f * LocalConfiguration.current.screenWidthDp).dp)
             .padding(
-                top = 10.dp,
                 bottom = 25.dp
             )
             .border(
@@ -92,7 +115,10 @@ fun MainScrollScreen(navController: NavHostController,viewModel: MainViewModel){
             )
             .verticalScroll(scrollStateUnder)
     ){
-        Column {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
             //シェアされているペルソナがいる場合にListに格納
             sharePersonas.get()
                 .addOnSuccessListener { documents ->
@@ -107,6 +133,16 @@ fun MainScrollScreen(navController: NavHostController,viewModel: MainViewModel){
             dbSharePersonas.forEach { sharePersona ->
                 userIdPersona = sharePersona.split(",")
                 PersonaBox(navController, userIdPersona[1], userIdPersona[0])
+            }
+            //シェアされているペルソナがいなかった場合にテキストを表示
+            if(dbSharePersonas.isEmpty()){
+                Text(
+                    text = "シェアされているペルソナはありません",
+                    color = Color.LightGray,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = (0.2 * LocalConfiguration.current.screenHeightDp).dp)
+                )
             }
         }
     }//box-end

@@ -1,16 +1,23 @@
 package ui
 
 //navArgumentのimport
+import android.content.Context
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.launch
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -21,6 +28,9 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 //---------------------------------------------------------------
 /*ViewModelの初期化
@@ -31,11 +41,22 @@ class MainViewModel: ViewModel(){
     //Authentication
     lateinit var auth: FirebaseAuth//Lateinitで「後で初期化をする」という宣言ができる
     lateinit var db: FirebaseFirestore//firestoreのインスタンスを生成
+
     init{
-        auth = Firebase.auth//Lateinitを使用したら必ず初期化しないといけない
+        auth = Firebase.auth
         db = Firebase.firestore
     }
-}
+
+    fun signOut(){
+        viewModelScope.launch{
+            try{
+                auth.signOut()
+            }catch (e: Exception){
+                println(e)
+            }
+        }
+    }
+}//class MainViewModel_end
 
 //--------------------------------------------------------------------------
 /*
