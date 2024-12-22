@@ -6,9 +6,12 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,23 +49,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.navigation.NavHostController
+import com.example.personacreatorjetpackcompose.R
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
+import javax.annotation.meta.When
+import kotlin.io.path.moveTo
 
 /*
     それぞれのペルソナの編集画面
@@ -88,14 +101,12 @@ fun PersonaEditScreen(
     var variableText by remember { mutableStateOf("Geographic") }
     //TextFieldがフォーカスされているかどうかを判断
     var hasFocus by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
     //行動変数や地理変数などTextFieldに入力された値を保存
     var textFields by remember { mutableStateOf<List<String>>(emptyList()) }
     //画面のスクロールするためのもの
     val scrollStateAbove = rememberScrollState()//画面スクロールを有効にする上のbox
     val scrollStateUnder = rememberScrollState()//画面スクロールを有効にする下のbox
-    //付箋の大きさ
-    val stickNoteHeight = 80.dp
-    val stickNoteWidth = 80.dp
     //エラー処理に使用するcontext
     val context = LocalContext.current
 
@@ -145,8 +156,21 @@ fun PersonaEditScreen(
                 //ーーーーーーーーーーーーーーーー上の付箋部分
                 LazyRow() {
                     items(items){item ->
+                        //クリックされているとtrue
+                        var animationFlag by remember { mutableStateOf(false) }
+                        //付箋のアニメーション
+                        val color by animateFloatAsState(if(animationFlag) 0f else 0.3f)//クリックされている以外の付箋を黒くする
+                        val size by animateFloatAsState(if(animationFlag) 1f else 0.8f)//クリックされている以外の付箋を小さくする
+                        val padding by animateFloatAsState(if(animationFlag) 0f else 1f)//クリックされていないときにtopのpaddingを16にして下の線を合わせる。
+
+                        if(item.color == variableColor){
+                            animationFlag = true
+                        }else{
+                            animationFlag = false
+                        }
                         Box(
                             modifier = Modifier
+                                .padding(top = (16 * padding).toInt().dp)
                                 //boxを曲線にする
                                 .clip(
                                     RoundedCornerShape(
@@ -154,15 +178,28 @@ fun PersonaEditScreen(
                                         topEnd = 16.dp,
                                     )
                                 )
-                                .background(item.color)
-                                .size(width = stickNoteWidth, height = stickNoteHeight)
+                                .size(
+                                    width = ((80 * size).toInt()).dp,
+                                    height = ((80 * size).toInt()).dp
+                                )
+                                .background(lerp(item.color, Color.Black, color))
                                 //クリックされたときの処理
                                 .clickable {
-                                    variableColor = item.color
-                                    variableText = item.personaVariable
+                                    if (hasFocus) {
+                                        //この処理がないと他の変数のTextFieldにフォーカスが入ったまま他の変数に保存される。
+                                        focusManager.clearFocus()
+                                    } else {
+                                        variableColor = item.color
+                                        variableText = item.personaVariable
+                                    }
                                 }
                         ) {
-                            Text(text = item.text)
+                            Text(
+                                text = item.text,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier
+                                    .align(Alignment.Center)
+                            )
                         }
                     }
                 }//LazyRow_End
@@ -171,7 +208,6 @@ fun PersonaEditScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(scrollStateAbove)//垂直スクロールを有効にしている
                         .border(
                             width = 2.dp,
                             color = borderColor,
@@ -191,7 +227,18 @@ fun PersonaEditScreen(
                         //clipの後に背景をつけないと色が枠の外にはみ出る
                         .background(Color.White)
                 ) {
-                    Column() {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(
+                                RoundedCornerShape(
+                                    topEnd = 16.dp,
+                                    bottomStart = 16.dp,
+                                    bottomEnd = 16.dp
+                                )
+                            )
+                            .verticalScroll(scrollStateAbove)//垂直スクロールを有効にしている
+                    ) {
                         LaunchedEffect(variableText){
                             textFields = emptyList()
                             document.get().addOnSuccessListener { document ->
@@ -342,13 +389,26 @@ fun PersonaEditScreen(
     }//全体のcolumnの最後の}---------------------------------------------------------------
 
     /*
-        それぞれの変数のTedtFieldを追加するボタン
+        それぞれの変数のTextFieldを追加するボタン
         真ん中右端に配置
      */
+    //変数についての説明を表示する用の変数　Box
+    var explanateBoxShow by remember { mutableStateOf(false) }
+    val explanateOffset by animateFloatAsState(if (explanateBoxShow) 0f else -2000f)
     Box(
         modifier = Modifier
             .fillMaxSize()
     ){
+        //地理変数などの説明をここに置いておく
+        Image(
+            painter = painterResource(id = R.drawable.hatena),
+            contentDescription = "変数を説明する画面に移動するボタンの画像",
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .clickable { explanateBoxShow = !explanateBoxShow }
+                .padding(start = 10.dp)
+        )
+        //地理的変数などにそれぞれTextFieldを追加するボタン
         Button(
             onClick = { textFields = textFields + "" },
             modifier = Modifier
@@ -358,7 +418,189 @@ fun PersonaEditScreen(
         }
     }
 
-    //Navigationメニュー処理------------------------------------------------------
+    /*--------------------------------------------------------------------
+       変数に対する説明を入れるところ
+       右と左の矢印があり、それを押すと次の説明が出るようにする
+    */
+    //この変数の数値によって説明本文を変える。　矢印を押したらこの値が上下する。
+    var explanateNumber by remember { mutableStateOf(1) }
+    var explanateText by remember { mutableStateOf(" , ") }
+    var explanateColor by remember { mutableStateOf(Color.Black) }
+    val triangelColor = lerp(Color.Blue, Color.Green, 0.5f)
+    var explanateList by remember { mutableStateOf<List<String>>(emptyList()) }
+    //説明の内容や色を変更
+    LaunchedEffect(explanateNumber) {
+        explanateText = when (explanateNumber) {
+            1 -> "地理変数,移住地、気候など"
+            2 -> "人口動態変数,年齢、性別、職業、家族構成、所得など"
+            3 -> "心理変数,価値観、ライフスタイルなど"
+            4 -> "行動変数,インターネットの利用頻度、Webサイトに求める機能など"
+            else -> " , "
+        }
+        explanateColor = when (explanateNumber) {
+            1 -> Color.Yellow
+            2 -> Color.Red
+            3 -> Color.Blue
+            4 -> Color.Green
+            else -> Color.Black
+        }
+    }
+    //実際の画面--------------------------------
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(
+                start = 10.dp,
+                end = 10.dp,
+                top = (LocalConfiguration.current.screenHeightDp.dp / 2) + 50.dp
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+                .clip(
+                    RoundedCornerShape(16.dp)
+                )
+                .offset(y = explanateOffset.dp)
+                .clickable { }
+                .background(lerp(explanateColor, Color.White, 0.8f))
+                .border(
+                    width = 2.dp,
+                    color = Color.Black,
+                    RoundedCornerShape(16.dp)
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    "各変数に以下のことをまとめましょう",
+                    modifier = Modifier
+                        .padding(bottom = 16.dp)
+                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    //左向きの矢印-----------------------------------------------------------------
+                    Canvas(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(50.dp)
+                            .clickable {
+                                if (explanateNumber != 1) {
+                                    explanateNumber -= 1
+                                }
+                            }
+                            .padding(10.dp)
+                    ) {
+                        val trianglePath = Path()
+                        val triangleSize = size.minDimension // 三角形のサイズをCanvasの最小辺に合わせる
+
+                        // 三角形の頂点を定義 (右向き)
+                        trianglePath.moveTo(0f, triangleSize / 2) // 左端の中央
+                        trianglePath.lineTo(triangleSize, 0f) // 右上
+                        trianglePath.lineTo(triangleSize, triangleSize) // 右下
+                        trianglePath.close()
+
+                        // 三角形を描画
+                        drawPath(
+                            path = trianglePath,
+                            color = lerp(triangelColor, Color.Black, if(explanateNumber==1){0.4f}else{0.0f}) // 色を指定
+                        )
+                    }//Canvas_End
+                    //説明本文を入れるところ-------------------------------------------------------------
+                    Box(
+                        modifier = Modifier
+                            .weight(4f)
+                            .height(150.dp)
+                            .background(Color.White)
+                            .border(
+                                width = 1.dp,
+                                color = Color.Black
+                            )
+                    ) {
+                        explanateList = explanateText.split(",")
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                "${explanateList[0]}",
+                                modifier = Modifier
+                                    .padding(5.dp),
+                                color = lerp(explanateColor, Color.Black, 0.3f),
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                "${explanateList[1]}",
+                                modifier = Modifier
+                                    .padding(
+                                        start = 5.dp,
+                                        end = 5.dp
+                                    )
+                            )
+                        }
+                    }
+                    //右向きの矢印---------------------------------------------------------------------
+                    Canvas(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(50.dp)
+                            .clickable {
+                                if (explanateNumber != 4) {
+                                    explanateNumber += 1
+                                }
+                            }
+                            .padding(10.dp)
+                    ) {
+                        val trianglePath = Path()
+                        val triangleSize = size.minDimension // 三角形のサイズをCanvasの最小辺に合わせる
+
+                        // 三角形の頂点を定義 (右向き)
+                        trianglePath.moveTo(0f, 0f) // 左上
+                        trianglePath.lineTo(triangleSize, triangleSize / 2) // 右端真ん中
+                        trianglePath.lineTo(0f, triangleSize) // 左下
+                        trianglePath.close()
+
+                        // 三角形を描画
+                        drawPath(
+                            path = trianglePath,
+                            color = lerp(triangelColor, Color.Black, if(explanateNumber==4){0.4f}else{0.0f}) // 色を指定
+                        )
+                    }//Canvas_End
+                }
+                //Boxを閉じる
+                Button(
+                    onClick = { explanateBoxShow = false },
+                    modifier = Modifier
+                        .padding(top = 20.dp)
+                ) {
+                    Text("閉じる")
+                }
+            }
+        }//説明文の入っているBox_End
+    }//全体のColumn_End
+
+    /*
+    ---------------------------------------------------------------------------------------
+        Navigationメニュー
+        できること
+        ○メイン画面に戻る
+        ○ユーザーリサーチについてまとめる画面を表示（未開発）
+        ○現在編集中のペルソナを他の人に共有
+            ・共有する相手のEmailを入力するBoxを表示
+     */
+    //背景を透過された灰色にする
     var ShareBox by remember { mutableStateOf(false) }//ShareBoxを表示するための変数
     val ShareBoxOffset by animateFloatAsState(if (ShareBox) 0f else -2000f)
     if (menuVisible) {
@@ -366,106 +608,116 @@ fun PersonaEditScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Gray.copy(alpha = 0.5f))
-                .clickable { menuVisible = false }
+                .clickable {
+                    menuVisible = false
+                    ShareBox = false
+                }
         ) {
-            Column(
-                modifier = Modifier
-                    .alpha(alpha)
-                    .fillMaxSize(),
-               horizontalAlignment = Alignment.End
-            ) {
-
-                // メニュー項目
-                var MBVisible by remember { mutableStateOf(false) }
-                val MBOffset by animateFloatAsState(if (MBVisible) 0f else 2000f)
-                Button(
-                    onClick = { navController.navigate("main")},
-                    modifier = Modifier
-                        .offset(y = MBOffset.dp)
-                        .padding(
-                            top = (0.7 * LocalConfiguration.current.screenHeightDp).dp
-                        )
-                ){
-                    Text("メイン画面へ戻る")
-                }
-
-                var URVisible by remember { mutableStateOf(false) }
-                val UROffset by animateFloatAsState(if (URVisible) 0f else 2000f)
-                Button(
-                    onClick = {
-                        unavailableShow = true
-                    },
-                    modifier = Modifier
-                        .offset(y = UROffset.dp)
-                        .padding(
-                            top = 10.dp
-                        )
-                ) {
-                    Text("ユーザーリサーチ(coming soon)")
-                }
-
-                var ShareVisible by remember { mutableStateOf(false) }
-                val ShareOffset by animateFloatAsState(if (ShareVisible) 0f else 2000f)
-                Button(
-                    onClick = {
-                        if(ShareBox){
-                            ShareBox = false
-                        }else{
-                            ShareBox = true
-                        }
-                    },
-                    modifier = Modifier
-                        .offset(y = ShareOffset.dp)
-                        .padding(
-                            top = 10.dp
-                        )
-                ) {
-                    Text("共有")
-                }
-
-                LaunchedEffect(menuVisible) {
-                    if (menuVisible) {
-                        delay(50)
-                        ShareVisible = true
-                        delay(50)
-                        URVisible = true
-                        delay(50)
-                        MBVisible = true
-                    } else {
-                        MBVisible = false
-                        URVisible = false
-                        ShareVisible = false
-                    }
-                }
-            }
         }
-    } //Navigation_end-------------------------------------------------------------------------------------
+    }
+    //MainScreenに遷移する
+    var MBVisible by remember { mutableStateOf(false) }
+    val MBOffset by animateFloatAsState(if (MBVisible) 0f else 2000f)
+    //ユーザーリサーチについてまとめる画面　まだ開発中
+    var URVisible by remember { mutableStateOf(false) }
+    val UROffset by animateFloatAsState(if (URVisible) 0f else 2000f)
+    //ペルソナをshareするためのEmailを入れるBoxを表示する
+    var ShareVisible by remember { mutableStateOf(false) }
+    val ShareOffset by animateFloatAsState(if (ShareVisible) 0f else 2000f)
+    //ボタンを順番に表示する
+    LaunchedEffect(menuVisible) {
+        if (menuVisible) {
+            delay(50)
+            ShareVisible = true
+            delay(50)
+            URVisible = true
+            delay(50)
+            MBVisible = true
+        } else {
+            delay(50)
+            MBVisible = false
+            delay(50)
+            URVisible = false
+            delay(50)
+            ShareVisible = false
+        }
+    }
+    Column(
+        modifier = Modifier
+            .alpha(alpha)
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.End
+    ) {
+        // メニュー項目--------------------------------------------------
+        //MainScreenに遷移する
+        Button(
+            onClick = { navController.navigate("main")},
+            modifier = Modifier
+                .offset(y = MBOffset.dp)
+                .padding(
+                    top = (0.7 * LocalConfiguration.current.screenHeightDp).dp
+                )
+        ){
+            Text("メイン画面へ戻る")
+        }
+        //ユーザーリサーチについてまとめる画面　まだ開発中
+        Button(
+            onClick = {
+                unavailableShow = true
+            },
+            modifier = Modifier
+                .offset(y = UROffset.dp)
+                .padding(
+                    top = 10.dp
+                )
+        ) {
+            Text("ユーザーリサーチ(coming soon)")
+        }
+        //ペルソナをshareするためのEmailを入れるBoxを表示する
+        Button(
+            onClick = {
+                if(ShareBox){
+                    ShareBox = false
+                }else{
+                    ShareBox = true
+                }
+            },
+            modifier = Modifier
+                .offset(y = ShareOffset.dp)
+                .padding(
+                    top = 10.dp
+                )
+        ) {
+            Text("共有")
+        }
+    } //Column_End
+    //Navigation_End------------------------------------------------------
+
 // 共有情報を入力----------------------------------------------------------
     var shareEmail by remember{mutableStateOf("")}
     Column(
         modifier = Modifier
             .fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
-                .offset(y = (ShareBoxOffset).dp)
-                .padding(
-                    top = (0.3 * LocalConfiguration.current.screenHeightDp).dp
-                )
+                .offset(y = ShareBoxOffset.dp)
                 .background(Color.White)
-                .size(250.dp, 300.dp)
+                .size(300.dp, 300.dp)
                 .border(1.dp, Color.Black)
                 .clickable { }
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = "共有",
+                    fontWeight = FontWeight.Bold
                 )
                 OutlinedTextField(
                     value = shareEmail,
@@ -473,8 +725,15 @@ fun PersonaEditScreen(
                     label = { Text("共有する相手のe-mail") },
                     modifier = Modifier
                         .fillMaxWidth()
+                        .padding(
+                            start = 10.dp,
+                            end = 10.dp
+                        )
                 )
-                Button(onClick = {Share(viewModel,shareEmail,personaName,context)},
+                Button(onClick = {
+                    Share(viewModel,shareEmail,personaName,context,focusManager)
+                    shareEmail = ""
+                                 },
                     modifier = Modifier
                         .padding(top = 16.dp)
                 ) {
@@ -528,7 +787,8 @@ fun Share(
     viewModel: MainViewModel,
     shareEmail : String,
     personaName : String,
-    context : Context
+    context : Context,
+    focusManager : FocusManager
 ){
     val usersCollection = viewModel.db.collection("users")
     var succes = false
@@ -546,9 +806,9 @@ fun Share(
                     var shareDocument = viewModel.db.collection("${document.id}").document("sharingPersonas")
                     //sharingPersonasでisSuccessfulがtrueならset,そうじゃないならupdate
                     if(shareDocument.get().isSuccessful) {
-                        shareDocument.set(data)
-                    }else{
                         shareDocument.update(data)
+                    }else{
+                        shareDocument.set(data)
                     }
                     succes = true
                 }
@@ -557,6 +817,7 @@ fun Share(
             if(succes){
                 Toast.makeText(context,"共有に成功しました",Toast.LENGTH_SHORT).show()
                 succes = false
+                focusManager.clearFocus()
             }else{
                 Toast.makeText(context,"共有に失敗しました",Toast.LENGTH_SHORT).show()
             }
@@ -644,14 +905,12 @@ fun PersonaIntegration(
                 )
                 //年齢-------------------------------------------------------
                 cosutom.FeaturesTextField(
-//                    userDataAge,
                     "年齢",
                     "age",
                     hasFocus
                 )
                 //性別---------------------------------------------------
                 cosutom.FeaturesTextField(
-//                    userDataGender,
                     "性別",
                     "gender",
                     hasFocus
@@ -661,16 +920,27 @@ fun PersonaIntegration(
 
         //ペルソナのゴールについて記載するところ
         cosutom.SentenceTextField(
-//            userDataGoal,
             "Goal",
             hasFocus
         )
-        //ペルソナの問題について記載するところ
+        //ペルソナの要求について記載するところ
         cosutom.SentenceTextField(
-//            userDataProblem,
-            "Problem",
+            "Needs",
             hasFocus
         )
+        cosutom.SentenceTextField(
+            "Opportunities",
+            hasFocus
+        )
+        cosutom.SentenceTextField(
+            "Observations",
+            hasFocus
+        )
+        cosutom.SentenceTextField(
+            "Tasks",
+            hasFocus
+        )
+
     }//Column_End
 
     //クリックした機能が使用できないことを表示する画面
@@ -726,7 +996,7 @@ class CustomUI(
         Focus: Boolean
     ) {
         //TextFieldに入力された値を格納
-        var data by remember { mutableStateOf("") }
+        var data by remember { mutableStateOf(" ") }
         //TextFieldがフォーカスされているかどうかを判断
         var hasFocus by remember { mutableStateOf(Focus) }
         //fireStoreの変更を監視して変更があった場合に変数に入れる

@@ -1,8 +1,10 @@
 package ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.content.contentReceiver
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -60,7 +62,7 @@ fun MainScrollScreen(navController: NavHostController,viewModel: MainViewModel){
             )
             //boxの外枠に線を標示
             .border(
-                width = 1.dp,
+                width = 2.dp,
                 color = Color.Black,
                 shape = RoundedCornerShape(8.dp)
             )
@@ -94,7 +96,10 @@ fun MainScrollScreen(navController: NavHostController,viewModel: MainViewModel){
     )
     Text(
         modifier = Modifier
-            .padding(bottom = 20.dp),
+            .padding(
+                top = 10.dp,
+                bottom = 5.dp
+                ),
         text = "シェアされているペルソナ"
     )
     /*
@@ -109,7 +114,7 @@ fun MainScrollScreen(navController: NavHostController,viewModel: MainViewModel){
                 bottom = 25.dp
             )
             .border(
-                width = 1.dp,
+                width = 2.dp,
                 color = Color.Black,
                 shape = RoundedCornerShape(8.dp)
             )
@@ -136,13 +141,18 @@ fun MainScrollScreen(navController: NavHostController,viewModel: MainViewModel){
             }
             //シェアされているペルソナがいなかった場合にテキストを表示
             if(dbSharePersonas.isEmpty()){
-                Text(
-                    text = "シェアされているペルソナはありません",
-                    color = Color.LightGray,
+                Column(
                     modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(top = (0.2 * LocalConfiguration.current.screenHeightDp).dp)
-                )
+                        .fillMaxWidth()
+                        .height((LocalConfiguration.current.screenHeightDp * 0.3).dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "シェアされているペルソナはありません",
+                        color = Color.LightGray
+                    )
+                }
             }
         }
     }//box-end
