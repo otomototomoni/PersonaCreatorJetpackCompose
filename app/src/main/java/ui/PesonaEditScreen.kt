@@ -12,6 +12,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,9 +75,6 @@ import com.example.personacreatorjetpackcompose.R
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.tasks.await
-import javax.annotation.meta.When
-import kotlin.io.path.moveTo
 
 /*
     それぞれのペルソナの編集画面
@@ -155,17 +154,17 @@ fun PersonaEditScreen(
             ) {
                 //ーーーーーーーーーーーーーーーー上の付箋部分
                 LazyRow() {
-                    items(items){item ->
+                    items(items) { item ->
                         //クリックされているとtrue
                         var animationFlag by remember { mutableStateOf(false) }
                         //付箋のアニメーション
-                        val color by animateFloatAsState(if(animationFlag) 0f else 0.3f)//クリックされている以外の付箋を黒くする
-                        val size by animateFloatAsState(if(animationFlag) 1f else 0.8f)//クリックされている以外の付箋を小さくする
-                        val padding by animateFloatAsState(if(animationFlag) 0f else 1f)//クリックされていないときにtopのpaddingを16にして下の線を合わせる。
+                        val color by animateFloatAsState(if (animationFlag) 0f else 0.3f)//クリックされている以外の付箋を黒くする
+                        val size by animateFloatAsState(if (animationFlag) 1f else 0.8f)//クリックされている以外の付箋を小さくする
+                        val padding by animateFloatAsState(if (animationFlag) 0f else 1f)//クリックされていないときにtopのpaddingを16にして下の線を合わせる。
 
-                        if(item.color == variableColor){
+                        if (item.color == variableColor) {
                             animationFlag = true
-                        }else{
+                        } else {
                             animationFlag = false
                         }
                         Box(
@@ -239,11 +238,13 @@ fun PersonaEditScreen(
                             )
                             .verticalScroll(scrollStateAbove)//垂直スクロールを有効にしている
                     ) {
-                        LaunchedEffect(variableText){
+                        LaunchedEffect(variableText) {
                             textFields = emptyList()
                             document.get().addOnSuccessListener { document ->
-                                if(document.exists()){
-                                    textFields = document.get(variableText) as? List<String> ?: emptyList()
+                                if (document.exists()) {
+                                    textFields =
+                                        document.get(variableText) as? List<String>
+                                            ?: emptyList()
                                 }
                             }
                         }
@@ -272,7 +273,8 @@ fun PersonaEditScreen(
                                                         val List =
                                                             snapshot.get(variableText) as? List<String>
                                                         val updateList =
-                                                            List?.toMutableList() ?: mutableListOf()
+                                                            List?.toMutableList()
+                                                                ?: mutableListOf()
                                                         //if文がないと空のlistにaccessしようとしていることになるから
                                                         if (index < updateList.size) {
                                                             updateList[index] = currentText
@@ -374,7 +376,7 @@ fun PersonaEditScreen(
                             RoundedCornerShape(16.dp)
                         )
                 ) {
-                    PersonaIntegration(navController,viewModel,personaName,userID)//　　↓
+                    PersonaIntegration(navController, viewModel, personaName, userID)//　　↓
                 }
             }//Column_End
         }//BoxWithConstraints_End
@@ -386,7 +388,7 @@ fun PersonaEditScreen(
         ) {
             Text("Menu")
         }
-    }//全体のcolumnの最後の}---------------------------------------------------------------
+    }//全体のcolumnの最後---------------------------------------------------------------
 
     /*
         それぞれの変数のTextFieldを追加するボタン
