@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.launch
 import androidx.compose.runtime.Composable
+import androidx.core.content.edit
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -31,6 +32,41 @@ import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+/*-----------------------------------------------------------
+    一度ログインしたら次からログイン画面を飛ばす処理
+ */
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+// ログイン済みフラグのキーを定義
+object PreferencesKeys {
+    val IS_LOGGED_IN = booleanPreferencesKey("is_logged_in")
+}
+
+// DataStore を操作するためのクラス
+class DataStoreManager(private val context: Context) {
+    
+    // ログイン済みフラグを保存する関数
+    suspend fun saveLoginStatus(isLoggedIn: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_LOGGED_IN] = isLoggedIn
+        }
+    }
+
+    // ログイン済みフラグを取得する関数
+    fun getLoginStatus(): Flow<Boolean> {
+        return context.dataStore.data.map { preferences ->
+            preferences[PreferencesKeys.IS_LOGGED_IN] ?: false // デフォルトは false
+        }
+    }
+}
 
 //---------------------------------------------------------------
 /*ViewModelの初期化
@@ -66,10 +102,8 @@ class MainViewModel: ViewModel(){
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)//必要かどうかを検討
-
+        super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)//firebase初期化
-
         enableEdgeToEdge()
         setContent {
             PersonaCreatorJetpackComposeTheme {
